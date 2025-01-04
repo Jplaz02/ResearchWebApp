@@ -1,0 +1,144 @@
+﻿@page "/edit-subject"
+@page "/edit-subject/{Id:int}"
+@inject ISubjectService SubjectService
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveServerRenderMode(prerender:false))
+
+@if (Id is null)
+{
+    <h3>Add a New Subject</h3>
+}
+else
+{
+    <h3>Edit "@CurrentSubject.SubjectName" by @CurrentSubject.Teacher</h3>
+}
+
+<EditForm Model="CurrentSubject" OnSubmit="HandleSubjectSubmit">
+    <div>
+        <label for="subjectName">Subject Name:</label>
+        <InputText id="subjectName" class="form-control" @bind-Value="CurrentSubject.SubjectName"></InputText>
+        <ValidationMessage For="@(() => CurrentSubject.SubjectName)" />
+    </div>
+    <div>
+        <label for="subjectDescription">Subject Description:</label>
+        <InputText id="subjectDescription" class="form-control" @bind-Value="CurrentSubject.SubjectDescription"></InputText>
+        <ValidationMessage For="@(() => CurrentSubject.SubjectDescription)" />
+    </div>
+    <div>
+        <label for="teacher">Teacher:</label>
+        <InputText id="teacher" class="form-control" @bind-Value="CurrentSubject.Teacher"></InputText>
+        <ValidationMessage For="@(() => CurrentSubject.Teacher)" />
+    </div>
+
+
+    <hr />
+
+    <h4>Schedules:</h4>
+    <div class="row">
+        @if (CurrentSubject.Schedules != null && CurrentSubject.Schedules.Any())
+        {
+            @foreach (var schedule in CurrentSubject.Schedules)
+            {
+                <div class="col-md-4">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <p><strong>Day:</strong> @schedule.Day.ToString()</p>
+                            <p><strong>Start Time:</strong> @DisplayTime(schedule.StartTime)</p>
+                            <p><strong>End Time:</strong> @DisplayTime(schedule.EndTime)</p>
+                        </div>
+                        <button type="button" class="btn btn-danger btn-sm" @onclick="@(() => DeleteSchedule(schedule))">Delete</button>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <p>No schedules found.</p>
+        }
+    </div>
+
+    <hr />
+
+    <div class="row">
+        <div class="col-md-4">
+            <label for="day">Day:</label>
+            <InputSelect id="day" class="form-control" @bind-Value="NewSchedule.Day">
+                @foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+                {
+                    <option value="@day">@day</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="col-md-4">
+            <label for="startTime">Start Time:</label>
+            <InputText id="startTime" type="time" class="form-control" @bind-Value="NewSchedule.StartTime"></InputText>
+            <ValidationMessage For="@(() => NewSchedule.StartTime)" />
+        </div>
+        <div class="col-md-4">
+            <label for="endTime">End Time:</label>
+            <InputText id="endTime" type="time" class="form-control" @bind-Value="NewSchedule.EndTime"></InputText>
+            <ValidationMessage For="@(() => NewSchedule.EndTime)" />
+        </div>
+    </div>
+
+    <hr />
+
+    <button type="button" class="btn btn-primary" @onclick="AddSchedule">Add Schedule</button>
+
+    <hr />
+
+    <button type="submit" class="btn btn-primary">Save</button>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+    public Subject CurrentSubject { get; set; } = new Subject();
+
+    // Temporary schedule input to add new schedule
+    public Schedule NewSchedule { get; set; } = new Schedule();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id is not null)
+        {
+            CurrentSubject = await SubjectService.GetSubjectsByIdAsync((int)Id);
+        }
+    }
+
+    async Task HandleSubjectSubmit()
+    {
+        if (Id is not null)
+        {
+            await SubjectService.UpdateSubjectAsync(CurrentSubject, (int)Id);
+        }
+        else
+        {
+            await SubjectService.AddSubjectAsync(CurrentSubject);
+        }
+        NavigationManager.NavigateTo("/");
+    }
+
+    // Method to add a new schedule input
+    void AddSchedule()
+    {
+        CurrentSubject.Schedules.Add(NewSchedule);
+        NewSchedule = new Schedule(); // Reset for next schedule input
+    }
+
+    // Method to delete a schedule input
+    void DeleteSchedule(Schedule schedule)
+    {
+        CurrentSubject.Schedules.Remove(schedule);
+    }
+
+    // Method to display time in 12-hour format with AM/PM
+    string DisplayTime(string? time)
+    {
+        if (!string.IsNullOrEmpty(time) && TimeSpan.TryParse(time, out TimeSpan parsedTime))
+        {
+            return DateTime.Today.Add(parsedTime).ToString("hh:mm tt");
+        }
+        return time ?? "Invalid Time"; // Handle null or empty time strings
+    }
+}

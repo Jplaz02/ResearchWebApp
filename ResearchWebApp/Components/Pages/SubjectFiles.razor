@@ -1,0 +1,264 @@
+﻿@page "/subject-files/{Id:int}"
+@using ResearchWebApp.Services;
+@using ResearchWebApp.Data;
+@inject SubjectStateService SubjectStateService
+@inject ISubjectService SubjectService
+@inject IPdfConversionService PdfConversionService
+@inject IOcrService OcrService
+@inject ITextCombinerService TextCombinerService
+@inject ISubjectFileService SubjectFileService
+@inject OpenAIService OpenAIService
+@inject GoogleCustomSearchService GoogleCustomSearchService
+@inject NavigationManager Navigation
+@inject DataContext _context
+@rendermode @(new InteractiveServerRenderMode(prerender:false))
+
+<div class="d-flex" style="min-height: 95vh;">
+    <!-- Sidebar -->
+    <div class="card flex-shrink-0" style="width: 15rem; height: 95vh; padding: 10px; position: fixed;">
+        <div class="card-header">
+            Subject Navigation
+        </div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+                <NavLink class="nav-link" href="@($"/subject-details/{Id}")">
+                    Subject Details
+                </NavLink>
+            </li>
+            <li class="list-group-item">
+                <NavLink class="nav-link" href="@($"/subject-files/{Id}")">
+                    |<u>Subject Files</u>
+                </NavLink>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content flex-grow-1" style="padding: 20px; margin-left: 15rem;">
+        @if (subject != null)
+        {
+            <h3>Subject Files</h3>
+            <hr />
+            <!-- Upload PDF Form -->
+            <h6>Upload PDF to make Reviewer</h6>
+            <InputFile OnChange="HandleFileSelected" accept=".pdf" />
+            <button @onclick="ProcessPdf" class="btn btn-secondary btn-sm ml-3" disabled="@(uploadedPdfFile == null)">Process PDF</button>
+
+            <p>Notification: </p>
+            @if (!string.IsNullOrEmpty(outputMessage))
+            {
+                <p>@outputMessage</p>
+            }
+
+            <hr />
+
+            <!-- Display Subject Files -->
+            <h5>Uploaded Files:</h5>
+            <div class="row">
+                @foreach (var subjectFile in subject.SubjectFiles)
+                {
+                    <div class="col-md-4 mb-4">
+                        <div class="card" style="width: 18rem;">
+                            <div class="card-body">
+                                <h5 class="card-title">@subjectFile.FileName</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">@subjectFile.DateUploaded.ToString("MM/dd/yyyy")</h6>
+
+                                <!-- View Button -->
+                                <Tooltip Title="View" Color="TooltipColor.Dark" Placement="TooltipPlacement.Bottom">
+                                    <button class="btn btn-info btn-sm ml-2" @onclick="() => ViewReviewer(subjectFile.FileName, subjectFile.Id)">
+                                        <i class="bi bi-eye"></i> <!-- Eye Icon for view -->
+                                    </button>
+                                </Tooltip>
+
+                                <!-- Edit Button -->
+                                <Tooltip Title="Edit" Color="TooltipColor.Dark" Placement="TooltipPlacement.Bottom">
+                                    <button class="btn btn-warning btn-sm ml-2" @onclick="() => EditReviewer(subjectFile.FileName, subjectFile.Id)">
+                                        <i class="bi bi-pencil-square"></i> <!-- Edit Icon -->
+                                    </button>
+                                </Tooltip>
+
+                                <!-- Delete Button -->
+                                <Tooltip Title="Delete" Color="TooltipColor.Dark" Placement="TooltipPlacement.Bottom">
+                                    <button class="btn btn-danger btn-sm ml-2" @onclick="() => DeleteSubjectFile(subjectFile)">
+                                        <i class="bi bi-trash3"></i> <!-- Trash Icon -->
+                                    </button>
+                                </Tooltip>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p>Loading subject files...</p>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Subject subject;
+    private IBrowserFile uploadedPdfFile;
+    private string outputMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        subject = await SubjectService.GetSubjectsByIdAsync(Id);
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        uploadedPdfFile = e.File;
+        outputMessage = null;
+    }
+
+    private async Task ProcessPdf()
+    {
+        try
+        {
+            if (uploadedPdfFile != null)
+            {
+                // Save uploaded PDF file to the server
+                string tempPdfPath = Path.Combine("uploads", uploadedPdfFile.Name);
+                Directory.CreateDirectory("uploads");
+                await using (var stream = new FileStream(tempPdfPath, FileMode.Create))
+                {
+                    await uploadedPdfFile.OpenReadStream(100 * 1024 * 1024).CopyToAsync(stream);
+                }
+
+                // Convert PDF to images
+                string tempImageOutputDir = Path.Combine("uploads", "images");
+                Directory.CreateDirectory(tempImageOutputDir);
+                List<byte[]> imageBytes = await PdfConversionService.ConvertPdfToImageAsync(File.OpenRead(tempPdfPath), tempImageOutputDir, uploadedPdfFile.Name);
+
+                // Perform OCR on each page image and save text
+                List<string> txtFilePaths = new();
+                string originalFileName = Path.GetFileNameWithoutExtension(uploadedPdfFile.Name);
+                for (int i = 0; i < imageBytes.Count; i++)
+                {
+                    string txtFileName = $"{originalFileName}_Page_{i + 1}.txt";
+                    string txtFilePath = Path.Combine("uploads", txtFileName);
+
+                    string ocrOutputFile = await OcrService.PerformOcrAsync(imageBytes[i], txtFileName);
+                    txtFilePaths.Add(ocrOutputFile);
+                }
+
+                // Combine text files into one final document
+                string combinedOutputFileName = $"{originalFileName}_Final.txt";
+                string combinedFilePath = await TextCombinerService.CombineTextFilesAsync(txtFilePaths, combinedOutputFileName);
+
+                // Generate HTML formatted study material
+                string combinedText = await File.ReadAllTextAsync(combinedFilePath);
+                string prompt = $"Based on the following content, please generate well-structured study material in pure HTML format. summarize some of the content if necessary. Do not include any markdown or code block indicators. Use <h1>, <h2>, <h3>, and <h6> tags appropriately, ensuring that important names and terms are bolded. Here is the content:\n\n{combinedText}";
+
+                string structuredContent = await OpenAIService.GenerateText(prompt);
+                string reviewerHtmlPath = Path.Combine("Reviewer", $"{originalFileName}_reviewer.html");
+                await SaveStructuredContentToHtml(structuredContent, reviewerHtmlPath);
+
+                // Save SubjectFile record to the database
+                var subjectFile = new SubjectFile
+                    {
+                        FileName = $"{originalFileName}_reviewer.html",
+                        FilePath = reviewerHtmlPath,
+                        SubjectId = Id,
+                        DateUploaded = DateTime.Now
+                    };
+
+                await _context.SubjectFiles.AddAsync(subjectFile);
+                await _context.SaveChangesAsync();
+
+                // Extract exactly 5 keywords from the structured content using OpenAI
+                string keywordsPrompt = $"Extract exactly 5 important keywords from the following research content: {structuredContent}. Return the keywords as a comma-separated list.";
+                var keywords = await OpenAIService.GenerateText(keywordsPrompt);
+
+                // Ensure we handle only 5 keywords from the OpenAI response
+                var keywordList = keywords.Split(',').Select(k => k.Trim()).Take(5).ToList();  // Limit to 5 keywords
+
+                // Perform Google Custom Search for each extracted keyword
+                List<SearchResult> searchResults = new List<SearchResult>();
+
+                foreach (var keyword in keywordList)
+                {
+                    var result = await GoogleCustomSearchService.SearchAsync(keyword, 2 );  // Ensure service is correctly referenced
+                    searchResults.AddRange(result);
+                }
+
+                // Save the search results to the database
+                foreach (var result in searchResults)
+                {
+                    var literature = new RelatedLiterature
+                        {
+                            Keyword = result.Keyword,  // Assuming 'Keyword' is part of the result object
+                            Title = result.Title,
+                            Preview = result.Preview,
+                            Link = result.Link,
+                            SubjectFileId = subjectFile.Id // Save the foreign key
+                        };
+                    await _context.RelatedLiterature.AddAsync(literature);
+                }
+
+                // Save changes to the database
+                await _context.SaveChangesAsync();
+
+
+                outputMessage = $"PDF processed successfully. Structured study material saved as: {reviewerHtmlPath} and related literature saved to database.";
+            }
+        }
+        catch (Exception ex)
+        {
+            outputMessage = $"An error occurred: {ex.Message}";
+        }
+    }
+
+
+
+    private async Task SaveStructuredContentToHtml(string content, string filePath)
+    {
+        string htmlContent = $"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Structured Reviewer</title><style>body {{ font-family: Arial, sans-serif; line-height: 1.6; }} h5 {{ color: #333; }} h6 {{ color: #777; }} ul {{ margin: 0; padding: 0; }} li {{ margin: 5px 0; }}</style></head><body>{content}</body></html>";
+        await File.WriteAllTextAsync(filePath, htmlContent);
+    }
+
+    private void ViewReviewer(string fileName, int id)
+    {
+        // Navigate to the reviewer's view page
+        Navigation.NavigateTo($"/view-reviewer/{fileName}/{subject.Id}");
+    }
+
+    private void EditReviewer(string fileName, int id)
+    {
+        // Navigate to the editor page for the file
+        Navigation.NavigateTo($"/edit-reviewer/{fileName}/{subject.Id}");
+    }
+
+    private async Task DeleteSubjectFile(SubjectFile subjectFile)
+    {
+        try
+        {
+            // Delete the file from the database
+            var subjectFileToDelete = await _context.SubjectFiles.FindAsync(subjectFile.Id);
+            if (subjectFileToDelete != null)
+            {
+                // Delete the file from the file system (reviewer path)
+                string filePath = subjectFileToDelete.FilePath;
+                if (System.IO.File.Exists(filePath))
+                {
+                    System.IO.File.Delete(filePath);
+                }
+
+                // Remove the file record from the database
+                _context.SubjectFiles.Remove(subjectFileToDelete);
+                await _context.SaveChangesAsync();
+                outputMessage = "File deleted successfully.";
+            }
+            else
+            {
+                outputMessage = "File not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            outputMessage = $"An error occurred: {ex.Message}";
+        }
+    }
+}

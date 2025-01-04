@@ -1,0 +1,93 @@
+/* General styling for the sidebar container */
+.sidebar-container {
+    width: 54px; /* Adjusted width to 54px */
+    height: 100vh; /* Full height of the viewport */
+    background-color: #343a40; /* Dark background */
+    color: white; /* Text color */
+    display: flex;
+    flex-direction: column;
+    position: fixed; /* Sticks to the side */
+    top: 0;
+    left: 0;
+    overflow: hidden;
+}
+
+.container {
+    padding: 0;
+}
+
+/* Styling for the top row (logo section) */
+.brandlogo {
+    background-color: #23272b; /* Slightly darker background */
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    height: 60px; /* Adjust the height as needed */
+    border-bottom: 1px solid #444;
+    flex-shrink: 0; /* Prevents the top row from shrinking */
+}
+
+/* Remove padding and center logo */
+.navbar-brand {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-left: 8px;
+    width: 40px;
+}
+
+    /* Styling for the navbar brand image (logo) */
+    .navbar-brand img {
+        max-height: 50px; /* Adjusted logo size */
+        max-width: 50px; /* Adjusted logo size */
+    }
+
+}
+
+/* Styling for the nav menu */
+.nav {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Styling for individual nav items */
+.nav-item {
+    display: flex;
+    justify-content: center; /* Center items horizontally */
+    align-items: center; /* Center items vertically */
+    width: 54px; /* Adjusted to match the sidebar width */
+    height: 40px; /* Ensure consistent spacing */
+    margin: 5px 0;
+}
+
+/* Styling for nav links */
+
+
+
+/* Icon adjustments */
+.bi {
+    display: inline-block;
+    position: relative;
+    width: 25px; /* Adjusted icon size */
+    height: 25px; /* Adjusted icon size */
+    top: -1px; /* Fine-tune icon position */
+    background-size: cover;
+}
+
+/* Specific icon styles for nav items */
+.bi-speedometer2-nav-menu {
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='16'%20height='16'%20fill='white'%20viewBox='0%200%2016%2016'%3E%3Cpath%20d='M8%204a.5.5%200%200%201%20.5.5V6a.5.5%200%200%201-1%200V4.5A.5.5%200%200%201%208%204M3.732%205.732a.5.5%200%200%201%20.707%200l.915.914a.5.5%201%201%201-.708.708l-.914-.915a.5.5%200%200%201%200-.707M2%2010a.5.5%200%200%201%20.5-.5h1.586a.5.5%200%200%201%200%201H2.5A.5.5%200%200%201%202%2010m9.5%200a.5.5%200%200%201%20.5-.5h1.5a.5.5%200%200%201%200%201H12a.5.5%200%200%201-.5-.5m.754-4.246a.39.39%200%200%200-.527-.02L7.547%209.31a.91.91%201%201%200%201.302%201.258l3.434-4.297a.39.39%200%200%200-.029-.518z'%2F%3E%3Cpath%20fill-rule='evenodd'%20d='M0%2010a8%208%200%201%201%2015.547%202.661c-.442%201.253-1.845%201.602-2.932%201.25C11.309%2013.488%209.475%2013%208%2013c-1.474%200-3.31.488-4.615.911-1.087.352-2.49.003-2.932-1.25A8%208%200%200%201%200%2010m8-7a7%207%200%200%200-6.603%209.329c.203.575.923.876%201.68.63C4.397%2012.533%206.358%2012%208%2012s3.604.532%204.923.96c.757.245%201.477-.056%201.68-.631A7%207%200%200%200%208%203'%2F%3E%3C%2Fsvg%3E ")
+}
+
+.bi-house-door-fill-nav-menu {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-house-door-fill' viewBox='0 0 16 16'%3E%3Cpath d='M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5Z'/%3E%3C/svg%3E");
+}
+
+.bi-plus-square-fill-nav-menu {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-plus-square-fill' viewBox='0 0 16 16'%3E%3Cpath d='M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2zm6.5 4.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3a.5.5 0 0 1 1 0z'/%3E%3C/svg%3E");
+}
+
+.bi-list-nested-nav-menu {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-list-nested' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M4.5 11.5A.5.5 0 0 1 5 11h10a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm-2-4A.5.5 0 0 1 3 7h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm-2-4A.5.5 0 0 1 1 3h10a.5.5 0 0 1 0 1H1a.5.5 0 0 1-.5-.5z'/%3E%3C/svg%3E");
+}

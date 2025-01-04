@@ -1,0 +1,26 @@
+WHAT IS DATA VOID?
+
+ 
+
+Data voids are one such way that search users can be led into disinformation
+or manipulated content. These voids occur when obscure search queries have
+few results associated with them, making them ripe for exploitation by media
+manipulators with ideological, economic, or political agendas. (Golebiewski
+& Boyd, 2019)
+
+ 
+
+e It is a lack of readily available, credible, authoritative information
+relating to a specific topic
+
+¢ Data voids are often difficult to detect.
+
+e Data voids are compounded by the fraught pathways of search-
+
+adjacent recommendation systems such as auto-play, auto-fill, and
+
+trending topics; each of which are vulnerable to manipulation.
+
+   
+
+   

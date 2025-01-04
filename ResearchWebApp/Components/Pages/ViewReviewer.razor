@@ -1,0 +1,151 @@
+﻿@page "/view-reviewer/{fileName}/{id:int}"
+@inject NavigationManager Navigation
+@inject IRelatedLiteratureService RelatedLiteratureService  // Inject your service for fetching related literature
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using System.IO
+@using DocumentFormat.OpenXml.Packaging
+@using Microsoft.AspNetCore.Components
+
+<h3>
+    <button class="btn btn-secondary btn-sm ml-3" @onclick="GoBack">Manage Files</button>
+    Reviewer Document: @fileName
+</h3>
+<hr />
+
+<div class="container">
+    <div class="row">
+        <!-- Main Content Section (File Content) -->
+        <div class="col-md-8">
+            @if (!string.IsNullOrEmpty(fileContent))
+            {
+                <div class="card mt-3 p-3">
+                    @if (fileName.EndsWith(".html"))
+                    {
+                        <div>@((MarkupString)fileContent)</div> <!-- Use MarkupString to render HTML -->
+                    }
+                    else
+                    {
+                        <pre>@fileContent</pre> <!-- Render plain text for non-HTML files -->
+                    }
+                </div>
+            }
+            else
+            {
+                <p>No content available or unable to load the file.</p>
+            }
+        </div>
+
+        <!-- Sidebar Section (Related Literature) -->
+        <div class="col-md-4">
+            <div class="card mt-3 p-3" style="height: 90vh;">
+                <h5>Related Literature</h5>
+                @if (relatedLiterature.Any())
+                {
+                    <ul>
+                        @foreach (var literature in relatedLiterature)
+                        {
+                            <li><a href="@literature.Link" target="_blank">@literature.Title</a></li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p>No related literature available.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string fileName { get; set; }
+    [Parameter] public int Id { get; set; } // This binds the 'Id' from the route
+
+    private string fileContent;
+    private List<RelatedLiterature> relatedLiterature = new List<RelatedLiterature>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id > 0)
+        {
+            LoadFileContent(); // Load the content if Id is provided
+            await LoadRelatedLiterature(); // Load related literature based on the SubjectFile ID
+        }
+        else
+        {
+            fileContent = "No file ID provided.";
+        }
+    }
+
+    private void LoadFileContent()
+    {
+        try
+        {
+            string filePath = Path.Combine("Reviewer", fileName);
+            if (File.Exists(filePath))
+            {
+                if (fileName.EndsWith(".docx"))
+                {
+                    // Load DOCX file
+                    using (var stream = File.OpenRead(filePath))
+                    using (var wordDoc = WordprocessingDocument.Open(stream, false))
+                    {
+                        var body = wordDoc.MainDocumentPart.Document.Body;
+                        if (body != null)
+                        {
+                            fileContent = ConvertDocxToHtml(body);
+                        }
+                        else
+                        {
+                            fileContent = "No content available in the document.";
+                        }
+                    }
+                }
+                else if (fileName.EndsWith(".html"))
+                {
+                    // Load HTML file content directly
+                    fileContent = File.ReadAllText(filePath);
+                }
+            }
+            else
+            {
+                fileContent = $"File '{fileName}' not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            fileContent = $"Error loading file: {ex.Message}";
+        }
+    }
+
+    private string ConvertDocxToHtml(OpenXmlElement body)
+    {
+        string htmlContent = "<div>";
+        foreach (var paragraph in body.Elements<DocumentFormat.OpenXml.Wordprocessing.Paragraph>())
+        {
+            htmlContent += "<p>" + paragraph.InnerText + "</p>";
+        }
+        htmlContent += "</div>";
+
+        return htmlContent;
+    }
+
+    private async Task LoadRelatedLiterature()
+    {
+        // Fetch related literature for the current SubjectFile based on its Id
+        relatedLiterature = await RelatedLiteratureService.GetRelatedLiteratureBySubjectFileId(Id);
+    }
+
+    private void GoBack()
+    {
+        if (Id > 0)
+        {
+            Navigation.NavigateTo($"/subject-files/{Id}");
+        }
+        else
+        {
+            // Handle case where Id is not available or invalid
+            Navigation.NavigateTo("/subject-files"); // Or another fallback route
+        }
+    }
+}

@@ -1,0 +1,179 @@
+﻿@page "/study-sessions"
+@inject ISubjectService SubjectService
+@inject IStudySessionService StudySessionService
+@inject ILogger<StudySessions> Logger
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveServerRenderMode(prerender:false))
+
+<h3>Study Sessions</h3>
+
+<div>
+    <label for="preferredTime">Preferred Study Time:</label>
+    <InputSelect id="preferredTime" class="form-control" @bind-Value="PreferredTime">
+        <option value="1">Morning</option>
+        <option value="2">Afternoon</option>
+        <option value="3">Evening</option>
+    </InputSelect>
+    <button class="btn btn-primary mt-2" @onclick="GenerateStudySessions">Generate Study Sessions</button>
+</div>
+
+<div class="mt-3">
+    <label for="subjectFilter">Choose a Study Session:</label>
+    <InputSelect id="subjectFilter" class="form-control" @bind-Value="SelectedSubjectId" @onchange="LoadStudySessions">
+        <option value="0">All</option>
+        @foreach (var subject in subjects)
+        {
+            <option value="@subject.Id">@subject.SubjectName</option>
+        }
+    </InputSelect>
+</div>
+
+<div class="mt-3">
+    @if (SelectedSubjectId == 0)
+    {
+        @foreach (var subject in subjects)
+        {
+            <div class="card mt-2">
+                <div class="card-body">
+                    <h5 class="card-title">@subject.SubjectName</h5>
+                    <p class="card-text"><strong>Priority Level:</strong> @subject.ExamSchedules.FirstOrDefault()?.Priority.ToString()</p>
+                    <p class="card-text">
+                        <strong>Exam Schedule:</strong>
+                        <ul>
+                            @foreach (var examSchedule in subject.ExamSchedules)
+                            {
+                                <li>@examSchedule.ExamDate.ToString("MM/dd/yyyy") @DisplayTime(examSchedule.StartTime) - @DisplayTime(examSchedule.EndTime)</li>
+                            }
+                        </ul>
+                    </p>
+                    <p class="card-text"><strong>Session Starts:</strong> @DisplayDate(subject.StudySessions.FirstOrDefault()?.SessionDate)</p>
+                    <p class="card-text"><strong>Session Ends:</strong> @DisplayDate(subject.StudySessions.LastOrDefault()?.SessionDate)</p>
+                </div>
+            </div>
+        }
+
+        <hr />
+
+        <div class="mt-3">
+            <h4>Generated Study Sessions:</h4>
+            @foreach (var dateGroup in studySessions.GroupBy(ss => ss.SessionDate))
+            {
+                <div class="card mt-2">
+                    <div class="card-body">
+                        <strong>@dateGroup.Key.ToString("MM/dd/yyyy")</strong>
+                        <ul>
+                            @foreach (var session in dateGroup)
+                            {
+                                <li>@session.Subject.SubjectName - @DisplayTime(session.StartTime) to @DisplayTime(session.EndTime)</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        var selectedSubject = subjects.FirstOrDefault(s => s.Id == SelectedSubjectId);
+        if (selectedSubject != null)
+        {
+            <div class="card mt-2">
+                <div class="card-body">
+                    <h5 class="card-title">@selectedSubject.SubjectName</h5>
+                    <p class="card-text"><strong>Priority Level:</strong> @selectedSubject.ExamSchedules.FirstOrDefault()?.Priority.ToString()</p>
+                    <p class="card-text">
+                        <strong>Exam Schedule:</strong>
+                        <ul>
+                            @foreach (var examSchedule in selectedSubject.ExamSchedules)
+                            {
+                                <li>@examSchedule.ExamDate.ToString("MM/dd/yyyy") @DisplayTime(examSchedule.StartTime) - @DisplayTime(examSchedule.EndTime)</li>
+                            }
+                        </ul>
+                    </p>
+                    <p class="card-text"><strong>Session Starts:</strong> @DisplayDate(selectedSubject.StudySessions.FirstOrDefault()?.SessionDate)</p>
+                    <p class="card-text"><strong>Session Ends:</strong> @DisplayDate(selectedSubject.StudySessions.LastOrDefault()?.SessionDate)</p>
+                </div>
+            </div>
+
+            <hr />
+
+            <div class="mt-3">
+                <h4>Generated Study Sessions:</h4>
+                @foreach (var dateGroup in studySessions.Where(ss => ss.SubjectId == SelectedSubjectId).GroupBy(ss => ss.SessionDate))
+                {
+                    <div class="card mt-2">
+                        <div class="card-body">
+                            <strong>@dateGroup.Key.ToString("MM/dd/yyyy")</strong>
+                            <ul>
+                                @foreach (var session in dateGroup)
+                                {
+                                    <li>@session.Subject.SubjectName - @DisplayTime(session.StartTime) to @DisplayTime(session.EndTime)</li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<Subject> subjects = new();
+    private List<StudySession> studySessions = new();
+    private int PreferredTime { get; set; } = 1; // Default to Morning
+    private int SelectedSubjectId { get; set; } = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        subjects = await SubjectService.GetAllSubjectsAsync();
+        studySessions = await StudySessionService.GetAllStudySessionsAsync();
+    }
+
+    private async Task GenerateStudySessions()
+    {
+        try
+        {
+            studySessions = await StudySessionService.GenerateStudySessionsAsync(PreferredTime);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error generating study sessions");
+        }
+    }
+
+    private async Task LoadStudySessions()
+    {
+        if (SelectedSubjectId == 0)
+        {
+            studySessions = await StudySessionService.GetAllStudySessionsAsync();
+        }
+        else
+        {
+            studySessions = await StudySessionService.GetStudySessionsBySubjectIdAsync(SelectedSubjectId);
+        }
+    }
+
+    private string DisplayExam(ExamSchedule? examSchedule)
+    {
+        if (examSchedule != null)
+        {
+            return $"{examSchedule.ExamDate:MM/dd/yyyy} {DisplayTime(examSchedule.StartTime)} - {DisplayTime(examSchedule.EndTime)}";
+        }
+        return "No upcoming exam scheduled";
+    }
+
+    private string DisplayDate(DateTime? date)
+    {
+        return date?.ToString("MM/dd/yyyy") ?? "N/A";
+    }
+
+    private string DisplayTime(string? time)
+    {
+        if (!string.IsNullOrEmpty(time) && TimeSpan.TryParse(time, out TimeSpan parsedTime))
+        {
+            return DateTime.Today.Add(parsedTime).ToString("hh:mm tt");
+        }
+        return time ?? "Invalid Time";
+    }
+}

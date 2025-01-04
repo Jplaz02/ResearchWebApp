@@ -1,0 +1,119 @@
+﻿@page "/upload-pdf-ocr"
+@using ResearchWebApp.Models
+@inject IPdfConversionService PdfConversionService
+@inject IOcrService OcrService
+@inject ITextCombinerService TextCombinerService
+@inject ISubjectFileService SubjectFileService
+@inject OpenAIService OpenAIService
+@inject NavigationManager NavigationManager
+@inject DataContext _context
+
+<h3>Upload PDF and Perform OCR</h3>
+
+<InputFile OnChange="HandleFileSelected" accept=".pdf" />
+<button @onclick="ProcessPdf" class="btn btn-primary" disabled="@(uploadedPdfFile == null)">Process PDF</button>
+
+@if (!string.IsNullOrEmpty(outputMessage))
+{
+    <div class="mt-3">
+        <p>@outputMessage</p>
+    </div>
+}
+
+@code {
+    private IBrowserFile uploadedPdfFile;
+    private string outputMessage;
+    private int selectedSubjectId; // Variable to hold the dynamically selected SubjectId
+
+    // This method can be used to update the SubjectId dynamically when the user selects a subject
+    private void OnSubjectSelected(int subjectId)
+    {
+        selectedSubjectId = subjectId; // Set the selected SubjectId
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        uploadedPdfFile = e.File; // Capture the uploaded PDF file
+        outputMessage = null;     // Reset the output message
+    }
+
+    private async Task ProcessPdf()
+    {
+        try
+        {
+            if (uploadedPdfFile != null)
+            {
+                // Step 1: Save the uploaded PDF to a temporary location
+                string tempPdfPath = Path.Combine("uploads", uploadedPdfFile.Name);
+                Directory.CreateDirectory("uploads");
+                await using (var stream = new FileStream(tempPdfPath, FileMode.Create))
+                {
+                    await uploadedPdfFile.OpenReadStream(100 * 1024 * 1024).CopyToAsync(stream); // Set limit as needed
+                }
+
+                // Step 2: Convert PDF to images
+                string tempImageOutputDir = Path.Combine("uploads", "images");
+                Directory.CreateDirectory(tempImageOutputDir);
+                List<byte[]> imageBytes = await PdfConversionService.ConvertPdfToImageAsync(File.OpenRead(tempPdfPath), tempImageOutputDir, uploadedPdfFile.Name);
+
+                List<string> txtFilePaths = new List<string>();
+
+                // Step 3: Perform OCR on each image and save each page's OCR result into a separate text file
+                string originalFileName = Path.GetFileNameWithoutExtension(uploadedPdfFile.Name); // Get the file name without the extension
+                for (int i = 0; i < imageBytes.Count; i++)
+                {
+                    // Example: OriginalFileName_Page1.txt
+                    string txtFileName = $"{originalFileName}_Page_{i + 1}.txt";
+                    string txtFilePath = Path.Combine("uploads", txtFileName);
+
+                    // Perform OCR and get the output path for the OCR text file
+                    string ocrOutputFile = await OcrService.PerformOcrAsync(imageBytes[i], txtFileName);
+                    txtFilePaths.Add(ocrOutputFile); // Add OCR text file path to the list
+                }
+
+                // Step 4: Combine all text files into one
+                string combinedOutputFileName = $"{originalFileName}_Final.txt"; // Example: OriginalFileName_Final.txt
+                string combinedFilePath = await TextCombinerService.CombineTextFilesAsync(txtFilePaths, combinedOutputFileName);
+
+                // Step 5: Generate structured study material using OpenAI API with specified HTML formatting
+                string combinedText = await File.ReadAllTextAsync(combinedFilePath);
+                string prompt = $"Based on the following content, please generate well-structured study material in pure HTML format. summarize some of the content if necessary. Do not include any markdown or code block indicators. Use <h1>, <h2>, <h3>, and <h6> tags appropriately, ensuring that important names and terms are bolded. Here is the content:\n\n{combinedText}";
+
+                // Generate structured content using OpenAI
+                string structuredContent = await OpenAIService.GenerateText(prompt);
+
+                // Save structured content to HTML file
+                string reviewerHtmlPath = Path.Combine("Reviewer", $"{originalFileName}_reviewer.html");
+                await SaveStructuredContentToHtml(structuredContent, reviewerHtmlPath);
+
+                // Step 6: Save the file path in the database (SubjectFile)
+                var subjectFile = new SubjectFile
+                    {
+                        FileName = $"{originalFileName}_reviewer.html", // This should match the FileName property
+                        FilePath = reviewerHtmlPath, // This should match the FilePath property
+                        SubjectId = selectedSubjectId, // Ensure you have a valid SubjectId
+                        DateUploaded = DateTime.Now // Ensure this is properly set to the current date
+                    };
+
+                // Save to database (make sure you have _context defined and injected)
+                await _context.SubjectFiles.AddAsync(subjectFile);
+                await _context.SaveChangesAsync();
+
+
+                outputMessage = $"PDF processed successfully. Structured study material saved as: {reviewerHtmlPath}.";
+            }
+        }
+        catch (Exception ex)
+        {
+            outputMessage = $"An error occurred: {ex.Message}";
+        }
+    }
+
+    private async Task SaveStructuredContentToHtml(string content, string filePath)
+    {
+        // Creating HTML content without any extra formatting markers
+        string htmlContent = $"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Structured Reviewer</title><style>body {{ font-family: Arial, sans-serif; line-height: 1.6; }} h5 {{ color: #333; }} h6 {{ color: #777; }} ul {{ margin: 0; padding: 0; }} li {{ margin: 5px 0; }}</style></head><body>{content}</body></html>";
+
+        await File.WriteAllTextAsync(filePath, htmlContent); // Save HTML content to file
+    }
+}

@@ -1,0 +1,145 @@
+@page "/subjects"
+@inject ISubjectService SubjectService
+@inject NavigationManager NavigationManager
+@using ResearchWebApp.DTOs
+@rendermode @(new InteractiveServerRenderMode(prerender:false))
+
+<h3>Subject Overview</h3>
+
+@if (subjects == null)
+{
+    <p><em>Loading Data...</em></p>
+}
+else if (subjects.Count == 0)
+{
+    <p><em>No subjects available.</em></p>
+}
+else
+{
+    <div class="container">
+        <div class="row">
+            @foreach (var subject in subjects)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="card-body" @onclick="() => NavigateToSubjectDetails(subject.Id)" style="cursor: pointer;">
+
+                            <h5 class="card-text">Subject Name: @subject.SubjectName | @subject.Teacher</h5>                            
+                            <p class="card-text">Class Schedule:</p>
+                            <ul>
+                                @foreach (var schedule in subject.Schedules)
+                                {
+                                    <li>@schedule.Day: @DisplayTime(schedule.StartTime) - @DisplayTime(schedule.EndTime)</li>
+                                }
+                            </ul>                           
+                                                
+                        </div>
+                            <button class="btn btn-primary" @onclick="() => EditSubject(subject.Id)">
+                                <i class="bi bi-pencil-square"></i> <!-- Edit Icon -->
+                            </button>
+
+                            <button class="btn btn-primary" @onclick="() => SubjectFiles(subject.Id)">
+                                <i class="bi bi-folder2-open"></i> <!-- Manage File Icon -->
+                            </button>
+
+                            <button class="btn btn-danger" @onclick="() => DeleteSubject(subject.Id)">
+                                <i class="bi bi-trash3"></i> <!-- Delete Icon -->
+                            </button>
+
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <br />
+        <div class="row mt-5">
+            <div class="col-md-5">
+                <button class="btn btn-primary" @onclick="AddSubject">Add New Subject</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Subject> subjects;
+    private bool showFileUpload = false;
+    private int selectedSubjectId;
+    private IBrowserFile? selectedFile;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(500);
+        subjects = await SubjectService.GetAllSubjectsWithDetailsAsync();
+    }
+
+    void NavigateToSubjectDetails(int id)
+    {
+        NavigationManager.NavigateTo($"/subject-details/{id}");
+    }
+
+    void EditSubject(int id)
+    {
+        NavigationManager.NavigateTo($"/edit-subject/{id}");
+    }
+    void SubjectFiles(int id)
+    {
+        NavigationManager.NavigateTo($"/subject-files/{id}");
+    }
+
+    void AddSubject()
+    {
+        NavigationManager.NavigateTo("/edit-subject");
+    }
+
+    async Task DeleteSubject(int id)
+    {
+        await SubjectService.DeleteSubjectAsync(id);
+        subjects = await SubjectService.GetAllSubjectsWithDetailsAsync();
+    }
+
+    void AddExamSchedule(int subjectId)
+    {
+        NavigationManager.NavigateTo($"/edit-exam-schedule?subjectId={subjectId}");
+    }
+
+    void ManageFiles()
+    {
+        NavigationManager.NavigateTo("/reviewer-list");
+    }
+
+    string DisplayTime(string? time)
+    {
+        if (!string.IsNullOrEmpty(time) && TimeSpan.TryParse(time, out TimeSpan parsedTime))
+        {
+            return DateTime.Today.Add(parsedTime).ToString("hh:mm tt");
+        }
+        return time ?? "Invalid Time";
+    }
+
+    void EditExamSchedule(int examScheduleId)
+    {
+        if (examScheduleId > 0)
+        {
+            NavigationManager.NavigateTo($"/edit-exam-schedule/{examScheduleId}");
+        }
+    }
+
+    void ShowFileUpload(int subjectId)
+    {
+        selectedSubjectId = subjectId;
+        showFileUpload = true;
+    }
+
+    void HideFileUpload()
+    {
+        showFileUpload = false;
+        selectedFile = null;
+    }
+
+    async void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+    }
+}

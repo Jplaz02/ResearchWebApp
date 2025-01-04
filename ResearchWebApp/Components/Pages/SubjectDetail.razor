@@ -1,0 +1,87 @@
+﻿@page "/subject-details/{Id:int}"
+@inject SubjectStateService SubjectStateService
+@inject ISubjectService SubjectService
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveServerRenderMode(prerender:false))
+
+<div class="d-flex">
+    <!-- Sidebar -->
+    <div class="card" style="width: 15rem; height: 95vh; padding: 10px;">
+        <div class="card-header">
+            Subject Navigation
+        </div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+                <NavLink class="nav-link" href="@($"/subject-details/{Id}")">
+                    |<u>Subject Details</u>
+                </NavLink>
+            </li>
+            <li class="list-group-item">
+                <NavLink class="nav-link" href="@($"/subject-files/{Id}")">
+                    Subject Files
+                </NavLink>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content" style="flex-grow: 1; padding: 20px;">
+        @if (CurrentSubject != null)
+        {
+            <h3>@CurrentSubject.SubjectName
+            <button class="btn btn-secondary btn-sm ml-3" @onclick="ManageExam">Manage Exam</button>
+            </h3>
+            <hr />
+            <p><strong>Description:</strong> @CurrentSubject.SubjectDescription</p>
+            <p><strong>Teacher:</strong> @CurrentSubject.Teacher</p>
+
+            <h4>Schedules:</h4>
+            <ul>
+                @foreach (var schedule in CurrentSubject.Schedules)
+                {
+                    <li>@schedule.Day: @DisplayTime(schedule.StartTime) - @DisplayTime(schedule.EndTime)</li>
+                }
+            </ul>
+
+            <h4>Upcoming Exams:</h4>
+            <ul>
+                @foreach (var exam in CurrentSubject.ExamSchedules)
+                {
+                    <li>@exam.ExamDate.ToShortDateString() @DisplayTime(exam.StartTime) - @DisplayTime(exam.EndTime)</li>
+                }
+            </ul>
+
+            <!-- Manage Exam Button -->
+            
+        }
+        else
+        {
+            <p>Loading subject details...</p>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }  // This gets the subject ID from the route.
+    public Subject CurrentSubject { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CurrentSubject = await SubjectService.GetSubjectsByIdAsync(Id); // Get the subject by ID.
+    }
+
+    string DisplayTime(string? time)
+    {
+        if (!string.IsNullOrEmpty(time) && TimeSpan.TryParse(time, out TimeSpan parsedTime))
+        {
+            return DateTime.Today.Add(parsedTime).ToString("hh:mm tt");
+        }
+        return time ?? "Invalid Time";
+    }
+
+    void ManageExam()
+    {
+        SubjectStateService.SetCurrentSubjectId(Id); // Store the current subject ID.
+        NavigationManager.NavigateTo("/edit-exam-schedule"); // Navigate to the edit exam schedule page.
+    }
+}

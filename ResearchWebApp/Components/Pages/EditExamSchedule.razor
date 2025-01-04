@@ -1,0 +1,130 @@
+﻿@page "/edit-exam-schedule"
+@page "/edit-exam-schedule/{Id:int}"
+@inject IExamScheduleService ExamScheduleService
+@inject ISubjectService SubjectService
+@inject SubjectStateService SubjectStateService
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveServerRenderMode(prerender:false))
+
+<h3>@(Id is null ? $"Add Exam Schedule for {CurrentSubject?.SubjectName}" : $"Edit Exam Schedule for {CurrentSubject?.SubjectName}")</h3>
+
+<EditForm Model="CurrentExamSchedule" OnValidSubmit="HandleExamScheduleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    @if (CurrentSubject != null)
+    {
+        <div>
+            <label>Subject:</label>
+            <p>@CurrentSubject.SubjectName</p>
+        </div>
+    }
+
+    <div>
+        <label for="examDate">Exam Date:</label>
+        <InputDate id="examDate" class="form-control" @bind-Value="CurrentExamSchedule.ExamDate"></InputDate>
+        <ValidationMessage For="@(() => CurrentExamSchedule.ExamDate)" />
+    </div>
+    <div>
+        <label for="startTime">Start Time:</label>
+        <InputText id="startTime" type="time" class="form-control" @bind-Value="CurrentExamSchedule.StartTime"></InputText>
+        <ValidationMessage For="@(() => CurrentExamSchedule.StartTime)" />
+    </div>
+    <div>
+        <label for="endTime">End Time:</label>
+        <InputText id="endTime" type="time" class="form-control" @bind-Value="CurrentExamSchedule.EndTime"></InputText>
+        <ValidationMessage For="@(() => CurrentExamSchedule.EndTime)" />
+    </div>
+    <div>
+        <label for="priority">Priority:</label>
+        <InputSelect id="priority" class="form-control" @bind-Value="CurrentExamSchedule.Priority">
+            @foreach (PriorityLevel priority in Enum.GetValues(typeof(PriorityLevel)))
+            {
+                <option value="@priority">@priority.ToString()</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => CurrentExamSchedule.Priority)" />
+    </div>
+
+    <hr />
+
+    <button type="submit" class="btn btn-primary">@((Id is null) ? "Add Schedule" : "Update Schedule")</button>
+</EditForm>
+
+@if (examSchedules.Any())
+{
+    <h4>Exam Schedules for @CurrentSubject?.SubjectName:</h4>
+    <div class="row">
+        @foreach (var schedule in examSchedules)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <p><strong>Exam Date:</strong> @schedule.ExamDate.ToShortDateString()</p>
+                        <p><strong>Start Time:</strong> @schedule.StartTime</p>
+                        <p><strong>End Time:</strong> @schedule.EndTime</p>
+                        <p><strong>Priority:</strong> @schedule.Priority.ToString()</p>
+                        <button class="btn btn-primary btn-sm" @onclick="() => EditSchedule(schedule.Id)">Edit</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteSchedule(schedule.Id)">Delete</button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private ExamSchedule CurrentExamSchedule { get; set; } = new ExamSchedule();
+    private Subject CurrentSubject { get; set; }
+    private List<ExamSchedule> examSchedules = new List<ExamSchedule>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var subjectId = SubjectStateService.GetCurrentSubjectId();
+        if (!subjectId.HasValue)
+        {
+            NavigationManager.NavigateTo("/subjects");
+            return;
+        }
+
+        CurrentSubject = await SubjectService.GetSubjectsByIdAsync(subjectId.Value);
+
+        if (Id is not null)
+        {
+            CurrentExamSchedule = await ExamScheduleService.GetExamScheduleByIdAsync(Id.Value) ?? new ExamSchedule();
+        }
+        else
+        {
+            CurrentExamSchedule.SubjectId = subjectId.Value;
+        }
+
+        examSchedules = await ExamScheduleService.GetExamSchedulesBySubjectIdAsync(subjectId.Value);
+    }
+
+    private async Task HandleExamScheduleSubmit()
+    {
+        if (Id is null)
+        {
+            await ExamScheduleService.AddExamScheduleAsync(CurrentExamSchedule);
+        }
+        else
+        {
+            await ExamScheduleService.UpdateExamScheduleAsync(CurrentExamSchedule);
+        }
+        NavigationManager.NavigateTo($"/subject-details/{CurrentSubject.Id}");
+    }
+
+    private void EditSchedule(int id)
+    {
+        NavigationManager.NavigateTo($"/edit-exam-schedule/{id}");
+    }
+
+    private async Task DeleteSchedule(int id)
+    {
+        await ExamScheduleService.DeleteExamScheduleAsync(id);
+        examSchedules = await ExamScheduleService.GetExamSchedulesBySubjectIdAsync(CurrentSubject.Id);
+        StateHasChanged();
+    }
+}
