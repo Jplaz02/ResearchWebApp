@@ -1,0 +1,20 @@
+The NIST Approach: Initiation
+
+ 
+
+« Security at this point is looked at in terms of
+business risks, with information security office
+providing input.
+
+« Key security activities include:
+
+— Delineation of business requirements in terms of
+confidentiality, integrity, and availability
+
+— Determination of information categorization and
+identification of known special handling requirements
+to transmit, store, or create information
+
+— Determination of any privacy requirements
+
+ 

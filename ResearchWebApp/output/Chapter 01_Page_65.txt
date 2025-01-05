@@ -1,0 +1,13 @@
+Information Security: Is It an Art or a
+
+ 
+
+Science?
+
+» Implementation of information security is often
+described as a combination of art and science.
+
++ “Security artisan” idea: based on the way individuals
+perceive system technologists and their abilities.
+
+ 

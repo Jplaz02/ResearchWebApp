@@ -1,0 +1,14 @@
+Key Information Security Concepts (3 of 3)
+
+ 
+
+« A computer can be the subject of an attack and/or
+the object of an attack.
+
+— When it is the subject of an attack, the computer is
+used as an active tool to conduct attack.
+
+— When it is the object of an attack, the computer is the
+entity being attacked.
+
+ 

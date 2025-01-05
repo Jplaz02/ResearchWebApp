@@ -1,0 +1,18 @@
+Approaches to Information Security
+Implementation: Bottom-Up Approach
+
+ 
+
+Grassroots effort: Systems administrators attempt to
+improve security of their systems.
+
+Key advantage: technical expertise of individual
+administrators
+
+Seldom works, as it lacks a number of critical features:
+— Participant support
+— Organizational staying power
+
+ 
+
+d in a license

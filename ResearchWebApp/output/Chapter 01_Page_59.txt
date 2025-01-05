@@ -1,0 +1,16 @@
+Figure 1-19 Microsoft's SDL (3 of 3)
+
+ 
+
+Release:
+
+— Create an incident response plan
+— Conduct nal security review
+
+— Certify release and archive
+Response:
+
+— Execute incident response plan
+Source © Microsoft Learning 2015
+
+ 

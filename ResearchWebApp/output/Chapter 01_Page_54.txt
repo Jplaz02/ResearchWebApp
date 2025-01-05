@@ -1,0 +1,9 @@
+Figure 1-17 Relating security considerations
+in the Operation/Maintenance phase
+
+ 
+
+Source: NIST SP 800-64 Rev. 2: Security Considerations in the System
+Development Life Cycle.
+
+ 

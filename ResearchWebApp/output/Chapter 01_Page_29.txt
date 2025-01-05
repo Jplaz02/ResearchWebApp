@@ -1,0 +1,14 @@
+Balancing Information Security and Access
+
+ 
+
+» Impossible to obtain perfect information security—it
+is a process, not a goal.
+
+« Security should be considered a balance between
+protection and availability.
+
++ To achieve balance, the level of security must allow
+reasonable access, yet protect against threats.
+
+ 

@@ -1,0 +1,9 @@
+Figure 1-16 Relating security considerations
+in the Implementation/Assessment phase
+
+ 
+
+Source: NIST SP 800-64 Rev. 2: Security Considerations in the System
+Development Life Cycle.
+
+ 

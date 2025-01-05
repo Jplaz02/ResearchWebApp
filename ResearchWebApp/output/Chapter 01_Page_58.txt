@@ -1,0 +1,20 @@
+Figure 1-19 Microsoft's SDL (2 of 3)
+
+ 
+
+* Implementation:
+
+— Use approved tools
+
+— Deprecate unsafe functions
+
+— Perform static analysis
+ Veri cation:
+
+— Perform dynamic analysis
+
+— Perform fuzz testing
+
+— Conduct attack surface review
+
+ 

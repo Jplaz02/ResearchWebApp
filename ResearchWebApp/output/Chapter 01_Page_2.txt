@@ -1,0 +1,23 @@
+Learning Objectives
+
+ 
+
+» Upon completion of this material, you should be
+
+able to:
+
+— Define information security
+
+— Recount the history of computer security and explain
+how it evolved into information security
+
+— Define key terms and critical concepts of information
+security
+
+— Explain the role of security in the systems
+development life cycle
+
+— Describe the information security roles of
+professionals within an organization
+
+ 

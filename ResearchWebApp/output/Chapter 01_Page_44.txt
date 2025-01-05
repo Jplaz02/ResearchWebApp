@@ -1,0 +1,15 @@
+Software Design Principles (1 of 2)
+
+ 
+
+Good software development results in secure
+products that meet all design specifications.
++ Some commonplace security principles
+— Keep design simple and small
+— Access decisions by permission not exclusion
+— Every access to every object checked for authority
+— Design depends on possession of keys/passwords
+— Protection mechanisms require two keys to unlock
+— Programs/users utilize only necessary privileges
+
+ 

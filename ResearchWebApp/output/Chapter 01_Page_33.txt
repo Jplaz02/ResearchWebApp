@@ -1,0 +1,21 @@
+Security in the Systems Development Life
+Cycle
+
+ 
+
+« Systems development life cycle (SDLC): a
+methodology for the design and implementation of
+an information system
+
+* Methodology: a formal approach to solving a
+problem based on a structured sequence of
+procedures
+
+» Using a methodology:
+
+— Ensures a rigorous process with a clearly defined
+goal
+
+— Increases probability of success
+
+ 

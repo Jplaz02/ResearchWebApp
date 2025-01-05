@@ -1,0 +1,20 @@
+The NIST Approach:
+
+Development/Acquisition
+
+ 
+
+« Key security activities include:
+
+— Conducting risk assessment and using results to
+supplement baseline security controls
+
+— Analyzing security requirements
+— Performing functional and security testing
+
+— Preparing initial documents for system certification
+and accreditation
+
+— Designing security architecture
+
+ 

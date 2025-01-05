@@ -1,0 +1,18 @@
+Security as Science
+
+ 
+
+« Dealing with technology designed for rigorous
+performance levels.
+
++ Specific conditions cause virtually all actions in
+computer systems.
+
+« Almost every fault, security hole, and systems
+malfunction is a result of interaction of specific
+hardware and software.
+
+« If developers had sufficient time, they could resolve
+and eliminate faults.
+
+ 

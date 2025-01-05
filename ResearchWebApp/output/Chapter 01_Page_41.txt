@@ -1,0 +1,17 @@
+Software Assurance (1 of 3)
+
+ 
+
++ Many organizations recognize the need to include
+planning for security objectives in the SDLC used to
+create systems.
+
+— Established procedures to create software that is more
+capable of being deployed in a secure fashion
+
+« This approach is known as software assurance (SA).
+
++ A national effort is under way to create a common body
+of knowledge focused on secure software development.
+
+ 

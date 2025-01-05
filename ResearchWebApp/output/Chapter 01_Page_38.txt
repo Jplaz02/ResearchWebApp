@@ -1,0 +1,17 @@
+Physical Design
+
+ 
+
+« Specific technologies are selected to support the
+alternatives identified and evaluated in the logical
+design.
+
+« Selected components are evaluated on make-or-
+buy decision.
+
+ Feasibility analysis is performed.
+
++ Entire solution is presented to organization’s
+management for approval.
+
+ 

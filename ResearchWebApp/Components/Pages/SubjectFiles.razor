@@ -65,7 +65,7 @@
 
                                 <!-- View Button -->
                                 <Tooltip Title="View" Color="TooltipColor.Dark" Placement="TooltipPlacement.Bottom">
-                                    <button class="btn btn-info btn-sm ml-2" @onclick="() => ViewReviewer(subjectFile.FileName, subjectFile.Id)">
+                                    <button class="btn btn-info btn-sm ml-2" @onclick="() => ViewReviewer(subjectFile.FileName, subjectFile.SubjectId, subjectFile.Id)">
                                         <i class="bi bi-eye"></i> <!-- Eye Icon for view -->
                                     </button>
                                 </Tooltip>
@@ -219,11 +219,11 @@
         await File.WriteAllTextAsync(filePath, htmlContent);
     }
 
-    private void ViewReviewer(string fileName, int id)
+    private void ViewReviewer(string fileName, int subjectId, int subjectFileId)
     {
-        // Navigate to the reviewer's view page
-        Navigation.NavigateTo($"/view-reviewer/{fileName}/{subject.Id}");
+        Navigation.NavigateTo($"/view-reviewer/{Uri.EscapeDataString(fileName)}/{subjectId}/{subjectFileId}");
     }
+
 
     private void EditReviewer(string fileName, int id)
     {

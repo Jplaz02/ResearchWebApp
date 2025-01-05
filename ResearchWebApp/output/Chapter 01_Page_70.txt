@@ -1,0 +1,12 @@
+Summary (2 of 2)
+
+ 
+
+« Information security must be managed similar to
+any major system implemented in an organization
+using a methodology like the SDLC.
+
++ Implementation of information security is often
+described as a combination of art and science.
+
+ 

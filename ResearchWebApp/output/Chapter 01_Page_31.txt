@@ -1,0 +1,14 @@
+Approaches to Information Security
+Implementation: Top-Down Approach
+
+« |nitiated by upper management
+— Issue policy, procedures, and processes
+— Dictate goals and expected outcomes of project
+— Determine accountability for each required action
+» The most successful type of top-down approach
+also involves a formal development strategy
+referred to as systems development life cycle.
+
+ 
+
+ 

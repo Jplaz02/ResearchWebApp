@@ -1,0 +1,17 @@
+The 1970s and 80s (1 of 2)
+
+ 
+
+« ARPANET grew in popularity, as did its potential for
+misuse.
+
+* Fundamental problems with ARPANET security
+were identified.
+
+— No safety procedures for dial-up connections to
+ARPANET
+
+— Nonexistent user identification and authorization to
+system
+
+ 

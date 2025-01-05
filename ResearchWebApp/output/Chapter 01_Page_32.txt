@@ -1,0 +1,16 @@
+Figure 1-12 Approaches to information
+security implementation
+
+Top-down approach Bottom-up approach
+
+ 
+
+ 
+
+ 
+
+ 
+
+© Congage Luaming 1015
+
+ 

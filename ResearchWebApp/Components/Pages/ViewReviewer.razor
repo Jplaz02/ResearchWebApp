@@ -1,6 +1,6 @@
-﻿@page "/view-reviewer/{fileName}/{id:int}"
+﻿@page "/view-reviewer/{fileName}/{id:int}/{subjectFileId:int}"
 @inject NavigationManager Navigation
-@inject IRelatedLiteratureService RelatedLiteratureService  // Inject your service for fetching related literature
+@inject IRelatedLiteratureService RelatedLiteratureService
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using System.IO
 @using DocumentFormat.OpenXml.Packaging
@@ -60,6 +60,7 @@
 @code {
     [Parameter] public string fileName { get; set; }
     [Parameter] public int Id { get; set; } // This binds the 'Id' from the route
+    [Parameter] public int SubjectFileId { get; set; }
 
     private string fileContent;
     private List<RelatedLiterature> relatedLiterature = new List<RelatedLiterature>();
@@ -133,7 +134,7 @@
     private async Task LoadRelatedLiterature()
     {
         // Fetch related literature for the current SubjectFile based on its Id
-        relatedLiterature = await RelatedLiteratureService.GetRelatedLiteratureBySubjectFileId(Id);
+        relatedLiterature = await RelatedLiteratureService.GetRelatedLiteratureBySubjectFileId(SubjectFileId);
     }
 
     private void GoBack()

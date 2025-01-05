@@ -1,0 +1,43 @@
+Table 1-1 Key Dates in Information
+Security (1 of 2)
+
+1968 Maurice Wilkes discusses password security in Time - Sharing Computer
+Systems.
+
+1970 Willis H. Ware author the report Security Controls for Computer Systems:
+Report of Defense Science Board Task Force on Computer Security—RAND
+R.609 which was not declassified until 1979. | became known as the seminal
+work identifying the need for computer Security.
+
+1973 Schell, Downey, and Popek examine the need for additional security in
+military systems in Preliminary Notes on the Design of Secure Military
+Computer Systems.
+
+1975 The Federal Information Processing Standards (FIPS) examines DES
+(Digital Encryption Standard) In the Federal Register.
+
+1978 Bisbey and Hollingsworth publish their study “Protection Analysis: Final
+Report,” which discussed the Protection Analysis project created by ARPA to
+better understand the vulnerabilities of operating system security and
+examine the possibility of automated vulnerability detection techniques in
+existing system software.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 

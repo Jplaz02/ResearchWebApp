@@ -1,0 +1,9 @@
+Figure 1-18 Relating security
+considerations in the Disposal phase
+
+ 
+
+Source: NIST SP 800-64 Rev. 2: Security Considerations in the System
+Development Life Cycle.
+
+ 

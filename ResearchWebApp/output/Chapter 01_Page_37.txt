@@ -1,0 +1,19 @@
+Logical Design
+
+ 
+
+The first and driving factor is the business need.
+— Applications are selected to provide needed services.
+
+Data support and structures capable of providing
+the needed inputs are identified.
+
+Specific technologies are delineated to implement
+the physical solution.
+
+Analysts generate estimates of costs and benefits to
+allow comparison of available options.
+
+Feasibility analysis is performed at the end.
+
+ 
