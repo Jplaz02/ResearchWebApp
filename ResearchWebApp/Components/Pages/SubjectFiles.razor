@@ -183,28 +183,6 @@
                     var result = await GoogleCustomSearchService.SearchAsync(keyword, 2 );  // Ensure service is correctly referenced
                     searchResults.AddRange(result);
                 }
-
-                // Save the search results to the database
-                foreach (var result in searchResults)
-                {
-                    var literature = new RelatedLiterature
-                        {
-                            Keyword = result.Keyword,  // Assuming 'Keyword' is part of the result object
-                            Title = result.Title,
-                            Preview = result.Preview,
-                            Link = result.Link,
-                            SubjectFileId = subjectFile.Id // Save the foreign key
-                        };
-                    await _context.RelatedLiterature.AddAsync(literature);
-                }
-
-                // Save changes to the database
-                await _context.SaveChangesAsync();
-
-
-                outputMessage = $"PDF processed successfully. Structured study material saved as: {reviewerHtmlPath} and related literature saved to database.";
-            }
-        }
         catch (Exception ex)
         {
             outputMessage = $"An error occurred: {ex.Message}";
