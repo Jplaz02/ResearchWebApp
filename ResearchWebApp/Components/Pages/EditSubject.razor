@@ -2,93 +2,107 @@
 @page "/edit-subject/{Id:int}"
 @inject ISubjectService SubjectService
 @inject NavigationManager NavigationManager
-@rendermode @(new InteractiveServerRenderMode(prerender:false))
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
-@if (Id is null)
-{
-    <h3>Add a New Subject</h3>
-}
-else
-{
-    <h3>Edit "@CurrentSubject.SubjectName" by @CurrentSubject.Teacher</h3>
-}
-
-<EditForm Model="CurrentSubject" OnSubmit="HandleSubjectSubmit">
-    <div>
-        <label for="subjectName">Subject Name:</label>
-        <InputText id="subjectName" class="form-control" @bind-Value="CurrentSubject.SubjectName"></InputText>
-        <ValidationMessage For="@(() => CurrentSubject.SubjectName)" />
-    </div>
-    <div>
-        <label for="subjectDescription">Subject Description:</label>
-        <InputText id="subjectDescription" class="form-control" @bind-Value="CurrentSubject.SubjectDescription"></InputText>
-        <ValidationMessage For="@(() => CurrentSubject.SubjectDescription)" />
-    </div>
-    <div>
-        <label for="teacher">Teacher:</label>
-        <InputText id="teacher" class="form-control" @bind-Value="CurrentSubject.Teacher"></InputText>
-        <ValidationMessage For="@(() => CurrentSubject.Teacher)" />
-    </div>
-
-
-    <hr />
-
-    <h4>Schedules:</h4>
-    <div class="row">
-        @if (CurrentSubject.Schedules != null && CurrentSubject.Schedules.Any())
+<div class="container py-5">
+    <div class="mb-4 text-center">
+        @if (Id is null)
         {
-            @foreach (var schedule in CurrentSubject.Schedules)
-            {
-                <div class="col-md-4">
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <p><strong>Day:</strong> @schedule.Day.ToString()</p>
-                            <p><strong>Start Time:</strong> @DisplayTime(schedule.StartTime)</p>
-                            <p><strong>End Time:</strong> @DisplayTime(schedule.EndTime)</p>
-                        </div>
-                        <button type="button" class="btn btn-danger btn-sm" @onclick="@(() => DeleteSchedule(schedule))">Delete</button>
-                    </div>
-                </div>
-            }
+            <h3 class="text-primary">Add a New Subject</h3>
         }
         else
         {
-            <p>No schedules found.</p>
+            <h3 class="text-primary">Edit Subject: <strong>@CurrentSubject.SubjectName</strong></h3>
+            <p class="text-muted">By: @CurrentSubject.Teacher</p>
         }
     </div>
 
-    <hr />
+    <EditForm Model="CurrentSubject" OnSubmit="HandleSubjectSubmit">
+        <div class="mb-4">
+            <label for="subjectName" class="form-label">Subject Name:</label>
+            <InputText id="subjectName" class="form-control" @bind-Value="CurrentSubject.SubjectName"></InputText>
+            <ValidationMessage For="@(() => CurrentSubject.SubjectName)" />
+        </div>
+        <div class="mb-4">
+            <label for="subjectDescription" class="form-label">Subject Description:</label>
+            <InputText id="subjectDescription" class="form-control" @bind-Value="CurrentSubject.SubjectDescription"></InputText>
+            <ValidationMessage For="@(() => CurrentSubject.SubjectDescription)" />
+        </div>
+        <div class="mb-4">
+            <label for="teacher" class="form-label">Teacher:</label>
+            <InputText id="teacher" class="form-control" @bind-Value="CurrentSubject.Teacher"></InputText>
+            <ValidationMessage For="@(() => CurrentSubject.Teacher)" />
+        </div>
 
-    <div class="row">
-        <div class="col-md-4">
-            <label for="day">Day:</label>
-            <InputSelect id="day" class="form-control" @bind-Value="NewSchedule.Day">
-                @foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+        <hr />
+
+        <h4 class="text-secondary mb-3">Schedules:</h4>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            @if (CurrentSubject.Schedules != null && CurrentSubject.Schedules.Any())
+            {
+                @foreach (var schedule in CurrentSubject.Schedules)
                 {
-                    <option value="@day">@day</option>
+                    <div class="col">
+                        <div class="card shadow border-0">
+                            <div class="card-body">
+                                <p><strong>Day:</strong> @schedule.Day</p>
+                                <p><strong>Start Time:</strong> @DisplayTime(schedule.StartTime)</p>
+                                <p><strong>End Time:</strong> @DisplayTime(schedule.EndTime)</p>
+                            </div>
+                            <div class="card-footer text-end">
+                                <button type="button" class="btn btn-danger btn-sm" @onclick="@(() => DeleteSchedule(schedule))">
+                                    <i class="bi bi-trash3 me-1"></i>Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 }
-            </InputSelect>
+            }
+            else
+            {
+                <p class="text-muted">No schedules found.</p>
+            }
         </div>
-        <div class="col-md-4">
-            <label for="startTime">Start Time:</label>
-            <InputText id="startTime" type="time" class="form-control" @bind-Value="NewSchedule.StartTime"></InputText>
-            <ValidationMessage For="@(() => NewSchedule.StartTime)" />
+
+        <hr />
+
+        <h5 class="text-secondary mb-3">Add New Schedule:</h5>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label for="day" class="form-label">Day:</label>
+                <InputSelect id="day" class="form-select" @bind-Value="NewSchedule.Day">
+                    @foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+                    {
+                        <option value="@day">@day</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="col-md-4">
+                <label for="startTime" class="form-label">Start Time:</label>
+                <InputText id="startTime" type="time" class="form-control" @bind-Value="NewSchedule.StartTime"></InputText>
+                <ValidationMessage For="@(() => NewSchedule.StartTime)" />
+            </div>
+            <div class="col-md-4">
+                <label for="endTime" class="form-label">End Time:</label>
+                <InputText id="endTime" type="time" class="form-control" @bind-Value="NewSchedule.EndTime"></InputText>
+                <ValidationMessage For="@(() => NewSchedule.EndTime)" />
+            </div>
         </div>
-        <div class="col-md-4">
-            <label for="endTime">End Time:</label>
-            <InputText id="endTime" type="time" class="form-control" @bind-Value="NewSchedule.EndTime"></InputText>
-            <ValidationMessage For="@(() => NewSchedule.EndTime)" />
+        <div class="text-end mt-3">
+            <button type="button" class="btn btn-outline-primary" @onclick="AddSchedule">
+                <i class="bi bi-plus-circle me-1"></i>Add Schedule
+            </button>
         </div>
-    </div>
 
-    <hr />
+        <hr />
 
-    <button type="button" class="btn btn-primary" @onclick="AddSchedule">Add Schedule</button>
-
-    <hr />
-
-    <button type="submit" class="btn btn-primary">Save</button>
-</EditForm>
+        <div class="text-end">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save me-1"></i>Save
+            </button>
+        </div>
+    </EditForm>
+</div>
 
 @code {
     [Parameter]

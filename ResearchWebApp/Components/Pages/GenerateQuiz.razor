@@ -1,0 +1,331 @@
+﻿@page "/quiz-generator/{SubjectFileId:int}"
+@using ResearchWebApp.Services
+@using Microsoft.EntityFrameworkCore
+@inject NavigationManager Navigation
+@inject OpenAIService OpenAIService
+@inject DataContext _context
+@using System.Text.RegularExpressions
+@inject ISubjectFileService SubjectFileService
+@using Newtonsoft.Json
+@rendermode @(new InteractiveServerRenderMode(prerender:false))
+
+<div class="container my-5">
+    <h1 class="text-center mb-4">Generate Quiz</h1>
+    <hr />
+
+    @if (subjectFile != null)
+    {
+        <div class="mb-4">
+            <h4>Subject File: <span class="text-primary">@Path.GetFileNameWithoutExtension(subjectFile.FileName)</span></h4>
+        </div>
+
+        <!-- Quiz Options -->
+        <div class="row gy-3">
+            <!-- Number of Questions -->
+            <div class="col-md-6">
+                <label for="numberOfQuestions" class="form-label">Number of Questions</label>
+                <select id="numberOfQuestions" @bind="numberOfQuestions" class="form-select">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                    <option value="25">25</option>
+                </select>
+            </div>
+
+            <!-- Quiz Type -->
+            <div class="col-md-6">
+                <label for="quizType" class="form-label">Quiz Type</label>
+                <select id="quizType" @bind="quizType" class="form-select">
+                    <option value="MultipleChoice">Multiple Choice</option>
+                    <option value="TrueFalse">True/False</option>
+                    <option value="FillInTheBlank">Fill in the Blank</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Generate Quiz Button -->
+        <div class="d-flex justify-content-center mt-4">
+            <button class="btn btn-primary btn-lg" @onclick="GenerateQuizAsync" disabled="@(isGeneratingQuiz)">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" hidden="@(isGeneratingQuiz == false)"></span>
+                Generate Quiz
+            </button>
+        </div>
+
+        <!-- Error Message -->
+        @if (!string.IsNullOrEmpty(quizGenerationError))
+        {
+            <div class="alert alert-danger mt-4" role="alert">
+                @quizGenerationError
+            </div>
+        }
+
+        <hr />
+
+        <!-- Display Quizzes -->
+        @if (quizzes != null && quizzes.Any())
+        {
+            <h3 class="mb-4">Generated Quizzes</h3>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                @foreach (var quiz in quizzes)
+                {
+                    <div class="col">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">@quiz.Title</h5>
+                                <p class="card-text">
+                                    <strong>Total Questions:</strong> @quiz.TotalQuestions<br />
+                                    <strong>Question Types:</strong>
+                                    @{
+                                        var distinctQuestionTypes = quiz.Questions.Select(q => (int)q.QuestionType).Distinct().ToList();
+                                        <span>
+                                            @string.Join(", ", distinctQuestionTypes.Select(type =>
+                                                 {
+                                                     return type switch
+                                                     {
+                                                         0 => "Multiple Choice",
+                                                         1 => "True/False",
+                                                         2 => "Fill in the Blank",
+                                                         _ => "Unknown"
+                                                     };
+                                                 }))
+                                        </span>
+                                    }
+                                    <br />
+                                    <strong>Date Created:</strong> @quiz.DateCreated.ToString("MMMM dd, yyyy hh:mm tt")
+                                </p>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-success" @onclick="() => TakeQuiz(quiz.Id)">Take Quiz</button>
+                                    <button class="btn btn-outline-primary" @onclick="() => NavigateToQuizDetail(quiz.Id)" disabled="@(!hasQuizAttempt)">
+                                        View Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="text-muted text-center">No quizzes have been generated yet.</p>
+        }
+    }
+    else
+    {
+        <p class="text-muted">Loading subject file...</p>
+    }
+</div>
+
+@code {
+    [Parameter] public int SubjectFileId { get; set; }
+    private SubjectFile subjectFile;
+    private int numberOfQuestions = 5;
+    private string quizType = "MultipleChoice";
+    private List<Quiz> quizzes = new();
+    private bool isGeneratingQuiz = false;
+    private string quizGenerationError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load the subject file
+        subjectFile = await _context.SubjectFiles.FindAsync(SubjectFileId);
+
+        // Load related quizzes
+        quizzes = await _context.Quizzes
+            .Where(q => q.SubjectFileId == SubjectFileId)
+            .Include(q => q.Questions) // Make sure to load the related Questions
+            .ToListAsync();
+
+        // Check for quiz attempts for each quiz
+        foreach (var quiz in quizzes)
+        {
+            hasQuizAttempt = await HasQuizAttempt(quiz.Id);
+        }
+    }
+
+
+
+    private async Task TakeQuiz(int quizId)
+    {
+        // Navigate to the quiz-taking page or load the quiz details
+        Navigation.NavigateTo($"/take-quiz/{quizId}/{SubjectFileId}");
+    }
+    private bool hasQuizAttempt;
+
+    private async Task NavigateToQuizDetail(int quizId)
+    {
+        hasQuizAttempt = await HasQuizAttempt(quizId);
+        if (hasQuizAttempt)
+        {
+            // Navigate to the quiz detail page
+            Navigation.NavigateTo($"/quiz-detail/{quizId}/{SubjectFileId}");
+        }
+        else
+        {
+            // Optionally, show a message that the quiz attempt is missing
+            Console.WriteLine("Quiz attempt not found.");
+        }
+    }
+
+    private async Task<bool> HasQuizAttempt(int quizId)
+    {
+        var quizAttempt = await _context.QuizAttempts
+            .FirstOrDefaultAsync(qa => qa.QuizId == quizId);
+
+        return quizAttempt != null;
+    }
+
+
+
+
+
+
+    private async Task GenerateQuizAsync()
+    {
+        isGeneratingQuiz = true;
+
+        string filePath = subjectFile.FilePath;
+        string fileContent;
+        try
+        {
+            fileContent = await File.ReadAllTextAsync(filePath);
+        }
+        catch (Exception ex)
+        {
+            quizGenerationError = $"Error reading file: {ex.Message}";
+            isGeneratingQuiz = false;
+            return;
+        }
+
+        if (string.IsNullOrEmpty(fileContent))
+        {
+            quizGenerationError = "The study material is empty.";
+            isGeneratingQuiz = false;
+            return;
+        }
+
+        string prompt = $@"
+    Create a {quizType} quiz with {numberOfQuestions} questions based on the following study material.
+    Please ensure that the questions are relevant and challenging.
+
+    The output should be in the following JSON format (do not put anything else and just give a json format output):
+    keep in mind for mcq do not use (,) if the answer option or correct answer is a long sentence
+
+    {{
+      'questions': [
+        {{
+          'question_text': 'Question text here',
+          'correct_answer': 'Correct answer here',
+          'answer_options': ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
+          'question_type': 'MCQ'
+        }}
+      ]
+    }}
+
+    Study Material:
+    {fileContent}
+    ";
+
+        var generatedQuestions = await OpenAIService.GenerateText(prompt);
+
+        if (string.IsNullOrEmpty(generatedQuestions))
+        {
+            quizGenerationError = "Received an empty response from the API.";
+            isGeneratingQuiz = false;
+            return;
+        }
+
+        string extractedJson = ExtractJson(generatedQuestions);
+        if (string.IsNullOrEmpty(extractedJson))
+        {
+            quizGenerationError = "Failed to extract valid JSON from the API response.";
+            isGeneratingQuiz = false;
+            return;
+        }
+
+        QuizGenerationResponse quizData;
+        try
+        {
+            quizData = JsonConvert.DeserializeObject<QuizGenerationResponse>(extractedJson);
+        }
+        catch (Newtonsoft.Json.JsonException ex)
+        {
+            quizGenerationError = $"Error parsing extracted JSON: {ex.Message}";
+            isGeneratingQuiz = false;
+            return;
+        }
+
+        if (quizData?.Questions == null || !quizData.Questions.Any())
+        {
+            quizGenerationError = "No questions generated.";
+            isGeneratingQuiz = false;
+            return;
+        }
+
+        // Fetch the latest quiz number
+        var lastQuiz = await _context.Quizzes
+            .Where(q => q.SubjectFileId == SubjectFileId)
+            .OrderByDescending(q => q.Title) // Sort by title to get the most recent quiz
+            .FirstOrDefaultAsync();
+
+        int nextQuizNumber = 1; // Default to Quiz #1
+
+        if (lastQuiz != null)
+        {
+            var lastQuizTitle = lastQuiz.Title;
+            var lastQuizNumber = lastQuizTitle.Split('#').LastOrDefault();
+
+            if (int.TryParse(lastQuizNumber, out var number))
+            {
+                nextQuizNumber = number + 1; // Increment the number for the new quiz
+            }
+        }
+
+        // Create the new quiz
+        Quiz newQuiz = new Quiz
+            {
+                SubjectFileId = subjectFile.Id,
+                Title = $"Quiz #{nextQuizNumber}", // Use the sequential quiz number
+                TotalQuestions = quizData.Questions.Count,
+                Questions = quizData.Questions.Select(q => new QuizQuestion
+                {
+                    QuestionText = q.QuestionText,
+                    CorrectAnswer = q.CorrectAnswer,
+                    AnswerOptions = quizType == "FillInTheBlank" ? null : string.Join(",", q.AnswerOptions ?? new List<string>()),
+                    QuestionType = Enum.Parse<QuestionType>(quizType)
+                }).ToList(),
+                DateCreated = DateTime.Now
+            };
+
+        try
+        {
+            await _context.Quizzes.AddAsync(newQuiz);
+            await _context.SaveChangesAsync();
+
+            quizzes = await _context.Quizzes
+                .Where(q => q.SubjectFileId == SubjectFileId)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            quizGenerationError = $"Error saving quiz to database: {ex.Message}";
+        }
+
+        isGeneratingQuiz = false;
+    }
+
+    private string ExtractJson(string rawResponse)
+    {
+        var jsonStartIndex = rawResponse.IndexOf("{");
+        var jsonEndIndex = rawResponse.LastIndexOf("}") + 1;
+
+        if (jsonStartIndex == -1 || jsonEndIndex == -1)
+        {
+            return null;
+        }
+
+        var extractedJson = rawResponse.Substring(jsonStartIndex, jsonEndIndex - jsonStartIndex);
+        return extractedJson;
+    }
+}

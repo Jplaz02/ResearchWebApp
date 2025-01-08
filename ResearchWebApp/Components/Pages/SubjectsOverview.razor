@@ -2,65 +2,66 @@
 @inject ISubjectService SubjectService
 @inject NavigationManager NavigationManager
 @using ResearchWebApp.DTOs
-@rendermode @(new InteractiveServerRenderMode(prerender:false))
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
-<h3>Subject Overview</h3>
+<div class="container py-5">
+    <h3 class="mb-4 text-center text-primary">Subject Overview</h3>
 
-@if (subjects == null)
-{
-    <p><em>Loading Data...</em></p>
-}
-else if (subjects.Count == 0)
-{
-    <p><em>No subjects available.</em></p>
-}
-else
-{
-    <div class="container">
-        <div class="row">
+    @if (subjects == null)
+    {
+        <div class="text-center">
+            <p class="text-muted"><em>Loading Data...</em></p>
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (subjects.Count == 0)
+    {
+        <p class="text-center text-muted"><em>No subjects available.</em></p>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-3 g-4">
             @foreach (var subject in subjects)
             {
-                <div class="col-md-4 mb-4">
-                    <div class="card">
+                <div class="col">
+                    <div class="card shadow border-0">
                         <div class="card-body">
-                            <div class="card-body" @onclick="() => NavigateToSubjectDetails(subject.Id)" style="cursor: pointer;">
-
-                            <h5 class="card-text">Subject Name: @subject.SubjectName | @subject.Teacher</h5>                            
-                            <p class="card-text">Class Schedule:</p>
-                            <ul>
+                            <h5 class="card-title text-primary">@subject.SubjectName</h5>
+                            <p class="card-subtitle mb-2 text-muted">Teacher: @subject.Teacher</p>
+                            <hr />
+                            <p class="card-text fw-bold">Class Schedule:</p>
+                            <ul class="list-unstyled">
                                 @foreach (var schedule in subject.Schedules)
                                 {
                                     <li>@schedule.Day: @DisplayTime(schedule.StartTime) - @DisplayTime(schedule.EndTime)</li>
                                 }
-                            </ul>                           
-                                                
+                            </ul>
                         </div>
-                            <button class="btn btn-primary" @onclick="() => EditSubject(subject.Id)">
-                                <i class="bi bi-pencil-square"></i> <!-- Edit Icon -->
+                        <div class="card-footer d-flex justify-content-between align-items-center">
+                            <button class="btn btn-outline-primary btn-sm" @onclick="() => EditSubject(subject.Id)">
+                                <i class="bi bi-pencil-square me-1"></i>Edit
                             </button>
-
-                            <button class="btn btn-primary" @onclick="() => SubjectFiles(subject.Id)">
-                                <i class="bi bi-folder2-open"></i> <!-- Manage File Icon -->
+                            <button class="btn btn-outline-secondary btn-sm" @onclick="() => SubjectFiles(subject.Id)">
+                                <i class="bi bi-folder2-open me-1"></i>Files
                             </button>
-
-                            <button class="btn btn-danger" @onclick="() => DeleteSubject(subject.Id)">
-                                <i class="bi bi-trash3"></i> <!-- Delete Icon -->
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteSubject(subject.Id)">
+                                <i class="bi bi-trash3 me-1"></i>Delete
                             </button>
-
                         </div>
                     </div>
                 </div>
             }
         </div>
 
-        <br />
-        <div class="row mt-5">
-            <div class="col-md-5">
-                <button class="btn btn-primary" @onclick="AddSubject">Add New Subject</button>
-            </div>
+        <div class="text-center mt-5">
+            <button class="btn btn-primary btn-lg" @onclick="AddSubject">
+                <i class="bi bi-plus-circle me-2"></i>Add New Subject
+            </button>
         </div>
-    </div>
-}
+    }
+</div>
 
 @code {
     private List<Subject> subjects;
@@ -70,22 +71,23 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.Delay(500);
+        await Task.Delay(500); // Simulate loading
         subjects = await SubjectService.GetAllSubjectsWithDetailsAsync();
     }
 
     void NavigateToSubjectDetails(int id)
     {
-        NavigationManager.NavigateTo($"/subject-details/{id}");
+        
     }
 
     void EditSubject(int id)
     {
         NavigationManager.NavigateTo($"/edit-subject/{id}");
     }
+
     void SubjectFiles(int id)
     {
-        NavigationManager.NavigateTo($"/subject-files/{id}");
+        NavigationManager.NavigateTo($"/subject-details/{id}");
     }
 
     void AddSubject()
@@ -99,16 +101,6 @@ else
         subjects = await SubjectService.GetAllSubjectsWithDetailsAsync();
     }
 
-    void AddExamSchedule(int subjectId)
-    {
-        NavigationManager.NavigateTo($"/edit-exam-schedule?subjectId={subjectId}");
-    }
-
-    void ManageFiles()
-    {
-        NavigationManager.NavigateTo("/reviewer-list");
-    }
-
     string DisplayTime(string? time)
     {
         if (!string.IsNullOrEmpty(time) && TimeSpan.TryParse(time, out TimeSpan parsedTime))
@@ -116,30 +108,5 @@ else
             return DateTime.Today.Add(parsedTime).ToString("hh:mm tt");
         }
         return time ?? "Invalid Time";
-    }
-
-    void EditExamSchedule(int examScheduleId)
-    {
-        if (examScheduleId > 0)
-        {
-            NavigationManager.NavigateTo($"/edit-exam-schedule/{examScheduleId}");
-        }
-    }
-
-    void ShowFileUpload(int subjectId)
-    {
-        selectedSubjectId = subjectId;
-        showFileUpload = true;
-    }
-
-    void HideFileUpload()
-    {
-        showFileUpload = false;
-        selectedFile = null;
-    }
-
-    async void HandleFileSelected(InputFileChangeEventArgs e)
-    {
-        selectedFile = e.File;
     }
 }

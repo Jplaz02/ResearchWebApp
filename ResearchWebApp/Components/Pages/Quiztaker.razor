@@ -1,0 +1,175 @@
+﻿@page "/take-quiz/{QuizId:int}/{SubjectFileId:int}"
+@using ResearchWebApp.Services
+@inject NavigationManager Navigation
+@inject DataContext _context
+@using Microsoft.EntityFrameworkCore
+@rendermode @(new InteractiveServerRenderMode(prerender:false))
+
+<div class="container my-5">
+    <h1 class="text-center">Take Quiz</h1>
+    <hr />
+
+    @if (quiz != null)
+    {
+        <div class="quiz-info mb-4">
+            <h3 class="text-primary">@quiz.Title</h3>
+            <p><strong>Total Questions:</strong> @quiz.TotalQuestions</p>
+        </div>
+
+        <EditForm Model="@quizAttempt" OnValidSubmit="SubmitQuiz">
+            <div class="quiz-questions">
+                @foreach (var question in quiz.Questions)
+                {
+                    <div class="card mb-4 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">@question.QuestionText</h5>
+
+                            @switch (question.QuestionType)
+                            {
+                                case QuestionType.MultipleChoice:
+                                    <div class="mt-3">
+                                        @foreach (var option in question.AnswerOptions.Split(','))
+                                        {
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio"
+                                                       id="@($"{question.Id}-{option}")"
+                                                       name="@($"question-{question.Id}")"
+                                                       value="@option"
+                                                       checked="@quizAnswers[question.Id] == option"
+                                                       @onchange="() => quizAnswers[question.Id] = option" />
+                                                <label class="form-check-label" for="@($"{question.Id}-{option}")">@option</label>
+                                            </div>
+                                        }
+                                    </div>
+                                    break;
+
+                                case QuestionType.TrueFalse:
+                                    <div class="d-flex justify-content-center mt-3">
+                                        <button type="button"
+                                                class="btn btn-outline-primary me-2 @(quizAnswers[question.Id] == "True" ? "active btn-primary" : "")"
+                                                @onclick='() => quizAnswers[question.Id] = "True"'>
+                                            True
+                                        </button>
+                                        <button type="button"
+                                                class="btn btn-outline-primary @(quizAnswers[question.Id] == "False" ? "active btn-primary" : "")"
+                                                @onclick='() => quizAnswers[question.Id] = "False"'>
+                                            False
+                                        </button>
+                                    </div>
+                                    break;
+
+                                case QuestionType.FillInTheBlank:
+                                    <div class="mt-3">
+                                        <input type="text" class="form-control"
+                                               value="@quizAnswers[question.Id]"
+                                               @oninput="e => quizAnswers[question.Id] = e.Value.ToString()"
+                                               placeholder="Your answer" />
+                                    </div>
+                                    break;
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="d-flex justify-content-center">
+                    <button type="submit" class="btn btn-primary btn-lg mt-3" disabled="@isSubmittingQuiz">
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" hidden="@(isSubmittingQuiz == false)"></span>
+                        Submit Quiz
+                    </button>
+                </div>
+            </div>
+        </EditForm>
+
+        @if (quizSubmitted)
+        {
+            <div class="alert alert-success mt-4 text-center">
+                <h4>Quiz Results</h4>
+                <p><strong>Score:</strong> @score / @quiz.TotalQuestions</p>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="text-center mt-5">
+            <p class="text-muted">Loading quiz...</p>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int QuizId { get; set; }
+    [Parameter] public int SubjectFileId { get; set; }
+    private Quiz quiz;
+    private Dictionary<int, string> quizAnswers = new();
+    private bool isSubmittingQuiz = false;
+    private bool quizSubmitted = false;
+    private int score = 0;
+    private QuizAttempt quizAttempt;
+
+    protected override async Task OnInitializedAsync()
+    {
+        quiz = await _context.Quizzes
+            .Include(q => q.Questions)
+            .FirstOrDefaultAsync(q => q.Id == QuizId);
+
+        if (quiz == null)
+        {
+            Navigation.NavigateTo("/quiz-generator");
+        }
+
+        quizAttempt = new QuizAttempt
+            {
+                QuizId = quiz.Id,
+                DateAttempted = DateTime.Now,
+                Status = "In Progress",
+                Answers = new List<QuizAnswer>()
+            };
+
+        foreach (var question in quiz.Questions)
+        {
+            quizAnswers[question.Id] = string.Empty;
+        }
+    }
+
+    private async Task SubmitQuiz()
+    {
+        isSubmittingQuiz = true;
+        score = 0;
+
+        foreach (var question in quiz.Questions)
+        {
+            if (quizAnswers.TryGetValue(question.Id, out var userAnswer))
+            {
+                var isCorrect = false;
+
+                if (question.QuestionType == QuestionType.MultipleChoice || question.QuestionType == QuestionType.TrueFalse)
+                {
+                    isCorrect = userAnswer == question.CorrectAnswer;
+                }
+                else if (question.QuestionType == QuestionType.FillInTheBlank)
+                {
+                    isCorrect = string.Equals(userAnswer, question.CorrectAnswer, StringComparison.OrdinalIgnoreCase);
+                }
+
+                quizAttempt.Answers.Add(new QuizAnswer
+                    {
+                        QuizQuestionId = question.Id,
+                        UserAnswer = userAnswer,
+                        IsCorrect = isCorrect
+                    });
+
+                if (isCorrect) score++;
+            }
+        }
+
+        quizAttempt.Status = "Completed";
+        quizAttempt.Score = score;
+        await _context.QuizAttempts.AddAsync(quizAttempt);
+        await _context.SaveChangesAsync();
+
+        quizSubmitted = true;
+        isSubmittingQuiz = false;
+
+        Navigation.NavigateTo($"/quiz-detail/{QuizId}/{SubjectFileId}");
+    }
+}

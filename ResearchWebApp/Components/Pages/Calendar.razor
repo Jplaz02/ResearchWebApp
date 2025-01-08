@@ -7,19 +7,25 @@
 @inject ILogger<Calendar> Logger
 @rendermode @(new InteractiveServerRenderMode(prerender:false))
 
-<div class="col-lg-12 control-section">
-    <SfSchedule TValue="ScheduleEvent" Height="600px" @bind-SelectedDate="@CurrentDate" @bind-CurrentView="@CurrentView">
-        <ScheduleEventSettings DataSource="@FilteredEvents"></ScheduleEventSettings>
-        <ScheduleViews>
-            <ScheduleView Option="Syncfusion.Blazor.Schedule.View.Month" DisplayName="Month"></ScheduleView>
-            <ScheduleView Option="Syncfusion.Blazor.Schedule.View.TimelineDay" DisplayName="Day"></ScheduleView>
-        </ScheduleViews>
-    </SfSchedule>
+<div class="container my-5">
+    <h1 class="text-center mb-4">Calendar</h1>
+    <hr />
+
+    <div class="col-lg-12">
+        <SfSchedule TValue="ScheduleEvent" Height="650px" @bind-SelectedDate="@CurrentDate" @bind-CurrentView="@CurrentView">
+            <ScheduleEventSettings DataSource="@FilteredEvents"></ScheduleEventSettings>
+            <ScheduleViews>
+                <ScheduleView Option="Syncfusion.Blazor.Schedule.View.Month" DisplayName="Month"></ScheduleView>
+                <ScheduleView Option="Syncfusion.Blazor.Schedule.View.TimelineDay" DisplayName="Day"></ScheduleView>
+                <ScheduleView Option="Syncfusion.Blazor.Schedule.View.TimelineWeek" DisplayName="Week"></ScheduleView>
+            </ScheduleViews>
+        </SfSchedule>
+    </div>
 </div>
 
 @code {
     private DateTime CurrentDate { get; set; } = DateTime.Today;
-    private Syncfusion.Blazor.Schedule.View CurrentView { get; set; } = Syncfusion.Blazor.Schedule.View.TimelineDay; // Specify the namespace
+    private Syncfusion.Blazor.Schedule.View CurrentView { get; set; } = Syncfusion.Blazor.Schedule.View.TimelineDay;
     private List<ScheduleEvent> AllEvents { get; set; } = new List<ScheduleEvent>();
     private List<ScheduleEvent> FilteredEvents { get; set; } = new List<ScheduleEvent>();
 
@@ -40,42 +46,42 @@
             // Log fetched data
             Logger.LogInformation($"Fetched {studySessions.Count} study sessions, {examSchedules.Count} exam schedules, and {subjects.Count} subjects.");
 
-            // Add Study Sessions to AllEvents
+            // Add study sessions
             AllEvents.AddRange(studySessions.Select(ss => new ScheduleEvent
                 {
                     Id = ss.Id,
-                    Subject = ss.Subject.SubjectName ?? "Unknown Subject",
-                    StartTime = ss.StartTime != null ? CombineDateAndTime(ss.SessionDate, ss.StartTime) : DateTime.MinValue,
-                    EndTime = ss.EndTime != null ? CombineDateAndTime(ss.SessionDate, ss.EndTime) : DateTime.MinValue,
-                    CategoryColor = "#0000FF" // Blue color for study sessions
+                    Subject = ss.Subject?.SubjectName ?? "Unknown Subject",
+                    StartTime = CombineDateAndTime(ss.SessionDate, ss.StartTime),
+                    EndTime = CombineDateAndTime(ss.SessionDate, ss.EndTime),
+                    CategoryColor = "#0000FF" // Blue for study sessions
                 }));
 
-            // Add Exam Schedules to AllEvents
+            // Add exam schedules
             AllEvents.AddRange(examSchedules.Select(es => new ScheduleEvent
                 {
                     Id = es.Id,
                     Subject = es.Subject?.SubjectName ?? "Unknown Subject",
-                    StartTime = es.StartTime != null ? CombineDateAndTime(es.ExamDate, es.StartTime) : DateTime.MinValue,
-                    EndTime = es.EndTime != null ? CombineDateAndTime(es.ExamDate, es.EndTime) : DateTime.MinValue,
-                    CategoryColor = "#FF0000" // Red color for exam schedules
+                    StartTime = CombineDateAndTime(es.ExamDate, es.StartTime),
+                    EndTime = CombineDateAndTime(es.ExamDate, es.EndTime),
+                    CategoryColor = "#FF0000" // Red for exams
                 }));
 
-            // Add Subject Schedules to AllEvents
+            // Add recurring subject schedules
             foreach (var subject in subjects)
             {
                 foreach (var schedule in subject.Schedules)
                 {
                     DateTime nextScheduleDate = Next(DateTime.Today, schedule.Day);
-                    for (int i = 0; i < 52; i++) // Add events for one year
+                    for (int i = 0; i < 52; i++) // Generate events for 1 year
                     {
                         AllEvents.Add(new ScheduleEvent
                             {
                                 Id = schedule.Id,
                                 Subject = subject.SubjectName ?? "Unknown Subject",
-                                StartTime = schedule.StartTime != null ? CombineDateAndTime(nextScheduleDate, schedule.StartTime) : DateTime.MinValue,
-                                EndTime = schedule.EndTime != null ? CombineDateAndTime(nextScheduleDate, schedule.EndTime) : DateTime.MinValue,
+                                StartTime = CombineDateAndTime(nextScheduleDate, schedule.StartTime),
+                                EndTime = CombineDateAndTime(nextScheduleDate, schedule.EndTime),
                                 RecurrenceRule = $"FREQ=WEEKLY;BYDAY={schedule.Day.ToString().Substring(0, 2).ToUpper()}",
-                                CategoryColor = "#808080" // Gray color for subject schedules
+                                CategoryColor = "#808080" // Gray for recurring schedules
                             });
                         nextScheduleDate = nextScheduleDate.AddDays(7);
                     }
@@ -87,20 +93,19 @@
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading calendar data.");
+            Logger.LogError(ex, "Error loading events.");
         }
     }
 
     private void FilterEvents()
     {
-        if (CurrentView == Syncfusion.Blazor.Schedule.View.TimelineDay)
+        FilteredEvents = CurrentView switch
         {
-            FilteredEvents = AllEvents.Where(e => e.CategoryColor == "#0000FF").ToList(); // Only study sessions
-        }
-        else if (CurrentView == Syncfusion.Blazor.Schedule.View.Month)
-        {
-            FilteredEvents = AllEvents.Where(e => e.CategoryColor == "#808080" || e.CategoryColor == "#FF0000").ToList(); // Only subject schedules and exam schedules
-        }
+            Syncfusion.Blazor.Schedule.View.TimelineDay => AllEvents.Where(e => e.CategoryColor == "#0000FF").ToList(), // Study sessions
+            Syncfusion.Blazor.Schedule.View.Month => AllEvents.Where(e => e.CategoryColor != "#0000FF").ToList(), // Exams & recurring schedules
+            Syncfusion.Blazor.Schedule.View.TimelineWeek => AllEvents, // All events
+            _ => AllEvents
+        };
 
         // Log filtered events
         Logger.LogInformation($"Filtered {FilteredEvents.Count} events for {CurrentView} view.");
@@ -114,14 +119,11 @@
 
     private DateTime CombineDateAndTime(DateTime date, string time)
     {
-        string[] formats = { "hh:mm tt", "h:mm tt", "HH:mm", "H:mm", "HH:mm:ss", "H:mm:ss" };
-        foreach (var format in formats)
+        if (DateTime.TryParseExact(time, new[] { "HH:mm", "h:mm tt", "H:mm" }, null, System.Globalization.DateTimeStyles.None, out DateTime parsedTime))
         {
-            if (DateTime.TryParseExact(time, format, null, System.Globalization.DateTimeStyles.None, out DateTime parsedTime))
-            {
-                return date.Add(parsedTime.TimeOfDay);
-            }
+            return date.Add(parsedTime.TimeOfDay);
         }
+
         Logger.LogError($"Invalid time format: {time}");
         throw new FormatException($"Invalid time format: {time}");
     }

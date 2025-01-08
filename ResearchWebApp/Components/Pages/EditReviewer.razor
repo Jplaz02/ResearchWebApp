@@ -4,19 +4,31 @@
 @using Syncfusion.Blazor
 @using Syncfusion.Blazor.RichTextEditor
 
-<h3>
-    Edit Reviewer Document
-    <button class="btn btn-secondary btn-sm ml-3" @onclick="SaveFile">Save</button>
-</h3>
+<div class="container py-5">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-primary">
+            <i class="bi bi-pencil-square me-2"></i>Reviewer Document: @Path.GetFileNameWithoutExtension(fileName)
+        </h3>
 
-<SfRichTextEditor @ref="richTextEditor" Value="@editorContent">
-    <RichTextEditorToolbarSettings Items="@Tools" />
-    <RichTextEditorQuickToolbarSettings Image="@Image" Link="@Link" />
-</SfRichTextEditor>
+        <button class="btn btn-outline-primary btn-sm" @onclick="SaveFile">
+            <i class="bi bi-save me-1"></i>Save Changes
+        </button>
+    </div>
+    <hr />
 
-
-
-<br />
+    <!-- Editor Section -->
+    <div>
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <SfRichTextEditor @ref="richTextEditor" Value="@editorContent">
+                    <RichTextEditorToolbarSettings Items="@Tools" />
+                    <RichTextEditorQuickToolbarSettings Image="@Image" Link="@Link" />
+                </SfRichTextEditor>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
     [Parameter]
@@ -98,16 +110,15 @@
 
     private async Task SaveFile()
     {
-        // Retrieve the current value from the editor
-        editorContent = richTextEditor.Value; // Use the Value property directly
+        editorContent = richTextEditor.Value;
 
         // Save the edited content back to the file
         string reviewerDir = Path.Combine("Reviewer");
         var filePath = Path.Combine(reviewerDir, fileName);
         if (File.Exists(filePath))
         {
-            File.WriteAllText(filePath, editorContent); // Write the updated content to the file
-            await Task.CompletedTask; // Simulating async operation
+            File.WriteAllText(filePath, editorContent);
+            await Task.CompletedTask;
 
             // After saving, navigate back to the subject file list page
             Navigation.NavigateTo($"/subject-files/{id}");

@@ -3,111 +3,80 @@
 @inject IStudySessionService StudySessionService
 @inject ILogger<StudySessions> Logger
 @inject NavigationManager NavigationManager
-@rendermode @(new InteractiveServerRenderMode(prerender:false))
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
-<h3>Study Sessions</h3>
+<div class="container py-5">
+    <div class="mb-4 text-center">
+        <h3 class="text-primary"><i class="bi bi-calendar-event me-2"></i>Study Sessions</h3>
+    </div>
 
-<div>
-    <label for="preferredTime">Preferred Study Time:</label>
-    <InputSelect id="preferredTime" class="form-control" @bind-Value="PreferredTime">
-        <option value="1">Morning</option>
-        <option value="2">Afternoon</option>
-        <option value="3">Evening</option>
-    </InputSelect>
-    <button class="btn btn-primary mt-2" @onclick="GenerateStudySessions">Generate Study Sessions</button>
-</div>
+    <!-- Preferred Study Time Selection -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <label for="preferredTime" class="form-label">Preferred Study Time:</label>
+            <InputSelect id="preferredTime" class="form-select mb-3" @bind-Value="PreferredTime">
+                <option value="1">Morning</option>
+                <option value="2">Afternoon</option>
+                <option value="3">Evening</option>
+            </InputSelect>
+            <button class="btn btn-outline-primary" @onclick="GenerateStudySessions">
+                <i class="bi bi-clock-history me-1"></i>Generate Study Sessions
+            </button>
+        </div>
+    </div>
 
-<div class="mt-3">
-    <label for="subjectFilter">Choose a Study Session:</label>
-    <InputSelect id="subjectFilter" class="form-control" @bind-Value="SelectedSubjectId" @onchange="LoadStudySessions">
-        <option value="0">All</option>
-        @foreach (var subject in subjects)
+    <!-- Subject Filter -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <label for="subjectFilter" class="form-label">Filter by Subject:</label>
+            <InputSelect id="subjectFilter" class="form-select" @bind-Value="SelectedSubjectId" @onchange="LoadStudySessions">
+                <option value="0">All Subjects</option>
+                @foreach (var subject in subjects)
+                {
+                    <option value="@subject.Id">@subject.SubjectName</option>
+                }
+            </InputSelect>
+        </div>
+    </div>
+
+    <!-- Study Sessions and Details -->
+    <div class="mt-4">
+        @if (SelectedSubjectId == 0)
         {
-            <option value="@subject.Id">@subject.SubjectName</option>
-        }
-    </InputSelect>
-</div>
-
-<div class="mt-3">
-    @if (SelectedSubjectId == 0)
-    {
-        @foreach (var subject in subjects)
-        {
-            <div class="card mt-2">
-                <div class="card-body">
-                    <h5 class="card-title">@subject.SubjectName</h5>
-                    <p class="card-text"><strong>Priority Level:</strong> @subject.ExamSchedules.FirstOrDefault()?.Priority.ToString()</p>
-                    <p class="card-text">
-                        <strong>Exam Schedule:</strong>
-                        <ul>
-                            @foreach (var examSchedule in subject.ExamSchedules)
-                            {
-                                <li>@examSchedule.ExamDate.ToString("MM/dd/yyyy") @DisplayTime(examSchedule.StartTime) - @DisplayTime(examSchedule.EndTime)</li>
-                            }
-                        </ul>
-                    </p>
-                    <p class="card-text"><strong>Session Starts:</strong> @DisplayDate(subject.StudySessions.FirstOrDefault()?.SessionDate)</p>
-                    <p class="card-text"><strong>Session Ends:</strong> @DisplayDate(subject.StudySessions.LastOrDefault()?.SessionDate)</p>
-                </div>
-            </div>
-        }
-
-        <hr />
-
-        <div class="mt-3">
-            <h4>Generated Study Sessions:</h4>
-            @foreach (var dateGroup in studySessions.GroupBy(ss => ss.SessionDate))
+            <!-- Display all subjects -->
+            @foreach (var subject in subjects)
             {
-                <div class="card mt-2">
+                <div class="card shadow-sm mb-3">
                     <div class="card-body">
-                        <strong>@dateGroup.Key.ToString("MM/dd/yyyy")</strong>
-                        <ul>
-                            @foreach (var session in dateGroup)
-                            {
-                                <li>@session.Subject.SubjectName - @DisplayTime(session.StartTime) to @DisplayTime(session.EndTime)</li>
-                            }
-                        </ul>
+                        <h5 class="card-title text-primary">@subject.SubjectName</h5>
+                        <p class="card-text"><strong>Priority Level:</strong> @subject.ExamSchedules.FirstOrDefault()?.Priority.ToString()</p>
+                        <p class="card-text">
+                            <strong>Exam Schedule:</strong>
+                            <ul class="list-unstyled">
+                                @foreach (var examSchedule in subject.ExamSchedules)
+                                {
+                                    <li><i class="bi bi-calendar3 me-2"></i>@examSchedule.ExamDate.ToString("MM/dd/yyyy") @DisplayTime(examSchedule.StartTime) - @DisplayTime(examSchedule.EndTime)</li>
+                                }
+                            </ul>
+                        </p>
+                        <p class="card-text"><strong>Session Starts:</strong> @DisplayDate(subject.StudySessions.FirstOrDefault()?.SessionDate)</p>
+                        <p class="card-text"><strong>Session Ends:</strong> @DisplayDate(subject.StudySessions.LastOrDefault()?.SessionDate)</p>
                     </div>
                 </div>
             }
-        </div>
-    }
-    else
-    {
-        var selectedSubject = subjects.FirstOrDefault(s => s.Id == SelectedSubjectId);
-        if (selectedSubject != null)
-        {
-            <div class="card mt-2">
-                <div class="card-body">
-                    <h5 class="card-title">@selectedSubject.SubjectName</h5>
-                    <p class="card-text"><strong>Priority Level:</strong> @selectedSubject.ExamSchedules.FirstOrDefault()?.Priority.ToString()</p>
-                    <p class="card-text">
-                        <strong>Exam Schedule:</strong>
-                        <ul>
-                            @foreach (var examSchedule in selectedSubject.ExamSchedules)
-                            {
-                                <li>@examSchedule.ExamDate.ToString("MM/dd/yyyy") @DisplayTime(examSchedule.StartTime) - @DisplayTime(examSchedule.EndTime)</li>
-                            }
-                        </ul>
-                    </p>
-                    <p class="card-text"><strong>Session Starts:</strong> @DisplayDate(selectedSubject.StudySessions.FirstOrDefault()?.SessionDate)</p>
-                    <p class="card-text"><strong>Session Ends:</strong> @DisplayDate(selectedSubject.StudySessions.LastOrDefault()?.SessionDate)</p>
-                </div>
-            </div>
 
-            <hr />
-
-            <div class="mt-3">
-                <h4>Generated Study Sessions:</h4>
-                @foreach (var dateGroup in studySessions.Where(ss => ss.SubjectId == SelectedSubjectId).GroupBy(ss => ss.SessionDate))
+            <!-- Display generated study sessions -->
+            <div class="mt-4">
+                <h4 class="text-secondary">Generated Study Sessions:</h4>
+                @foreach (var dateGroup in studySessions.GroupBy(ss => ss.SessionDate))
                 {
-                    <div class="card mt-2">
+                    <div class="card shadow-sm mb-3">
                         <div class="card-body">
-                            <strong>@dateGroup.Key.ToString("MM/dd/yyyy")</strong>
-                            <ul>
+                            <h6 class="text-primary">@dateGroup.Key.ToString("MM/dd/yyyy")</h6>
+                            <ul class="list-unstyled">
                                 @foreach (var session in dateGroup)
                                 {
-                                    <li>@session.Subject.SubjectName - @DisplayTime(session.StartTime) to @DisplayTime(session.EndTime)</li>
+                                    <li><i class="bi bi-book me-2"></i>@session.Subject.SubjectName - @DisplayTime(session.StartTime) to @DisplayTime(session.EndTime)</li>
                                 }
                             </ul>
                         </div>
@@ -115,7 +84,51 @@
                 }
             </div>
         }
-    }
+        else
+        {
+            <!-- Display filtered subject -->
+            var selectedSubject = subjects.FirstOrDefault(s => s.Id == SelectedSubjectId);
+            if (selectedSubject != null)
+            {
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary">@selectedSubject.SubjectName</h5>
+                        <p class="card-text"><strong>Priority Level:</strong> @selectedSubject.ExamSchedules.FirstOrDefault()?.Priority.ToString()</p>
+                        <p class="card-text">
+                            <strong>Exam Schedule:</strong>
+                            <ul class="list-unstyled">
+                                @foreach (var examSchedule in selectedSubject.ExamSchedules)
+                                {
+                                    <li><i class="bi bi-calendar3 me-2"></i>@examSchedule.ExamDate.ToString("MM/dd/yyyy") @DisplayTime(examSchedule.StartTime) - @DisplayTime(examSchedule.EndTime)</li>
+                                }
+                            </ul>
+                        </p>
+                        <p class="card-text"><strong>Session Starts:</strong> @DisplayDate(selectedSubject.StudySessions.FirstOrDefault()?.SessionDate)</p>
+                        <p class="card-text"><strong>Session Ends:</strong> @DisplayDate(selectedSubject.StudySessions.LastOrDefault()?.SessionDate)</p>
+                    </div>
+                </div>
+
+                <!-- Display filtered study sessions -->
+                <div class="mt-4">
+                    <h4 class="text-secondary">Generated Study Sessions:</h4>
+                    @foreach (var dateGroup in studySessions.Where(ss => ss.SubjectId == SelectedSubjectId).GroupBy(ss => ss.SessionDate))
+                    {
+                        <div class="card shadow-sm mb-3">
+                            <div class="card-body">
+                                <h6 class="text-primary">@dateGroup.Key.ToString("MM/dd/yyyy")</h6>
+                                <ul class="list-unstyled">
+                                    @foreach (var session in dateGroup)
+                                    {
+                                        <li><i class="bi bi-book me-2"></i>@session.Subject.SubjectName - @DisplayTime(session.StartTime) to @DisplayTime(session.EndTime)</li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
 </div>
 
 @code {
@@ -163,10 +176,7 @@
         return "No upcoming exam scheduled";
     }
 
-    private string DisplayDate(DateTime? date)
-    {
-        return date?.ToString("MM/dd/yyyy") ?? "N/A";
-    }
+    private string DisplayDate(DateTime? date) => date?.ToString("MM/dd/yyyy") ?? "N/A";
 
     private string DisplayTime(string? time)
     {

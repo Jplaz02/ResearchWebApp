@@ -1,9 +1,0 @@
-Figure 1-15 Relating security considerations
-in the Development/Acquisition phase
-
- 
-
-Source: NIST SP 800-64 Rev. 2: Security Considerations in the System
-Development Life Cycle.
-
- 

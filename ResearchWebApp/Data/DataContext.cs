@@ -12,6 +12,12 @@ namespace ResearchWebApp.Data
         public DbSet<StudySession> StudySessions { get; set; }
         public DbSet<SubjectFile> SubjectFiles { get; set; }
         public DbSet<RelatedLiterature> RelatedLiterature { get; set; }
+        public DbSet<Quiz> Quizzes { get; set; }
+        public DbSet<QuizQuestion> QuizQuestions { get; set; }
+        public DbSet<QuizAttempt> QuizAttempts { get; set; }
+        public DbSet<QuizAnswer> QuizAnswers { get; set; }
+
+
 
 
         public DataContext(DbContextOptions<DataContext> options) : base(options)
@@ -27,8 +33,11 @@ namespace ResearchWebApp.Data
             }
         }
 
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder.Entity<Subject>()
                 .HasMany(s => s.Schedules)
                 .WithOne(s => s.Subject)
@@ -63,6 +72,39 @@ namespace ResearchWebApp.Data
                 .HasOne(rl => rl.SubjectFile)
                 .WithMany(sf => sf.RelatedLiteratures)
                 .HasForeignKey(rl => rl.SubjectFileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Cascade delete Quiz when SubjectFile is deleted
+            // SubjectFile -> Quiz
+            modelBuilder.Entity<Quiz>()
+                .HasOne(q => q.SubjectFile)  // Quiz has one SubjectFile
+                .WithMany(sf => sf.Quizzes)  // SubjectFile can have many Quizzes
+                .HasForeignKey(q => q.SubjectFileId)  // Use SubjectFileId as the foreign key
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Quiz -> QuizQuestion
+            modelBuilder.Entity<QuizQuestion>(entity =>
+            {
+                entity.HasKey(q => q.Id); // Explicitly setting the primary key
+                entity.HasOne(q => q.Quiz)
+                      .WithMany(q => q.Questions)
+                      .HasForeignKey(q => q.QuizId)
+                      .OnDelete(DeleteBehavior.Cascade); // Optional: Delete questions when quiz is deleted
+            });
+
+
+            // Quiz -> QuizAttempt
+            modelBuilder.Entity<QuizAttempt>()
+                .HasOne(qa => qa.Quiz)
+                .WithMany(q => q.Attempts)
+                .HasForeignKey(qa => qa.QuizId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // QuizQuestion -> QuizAnswer
+            modelBuilder.Entity<QuizAnswer>()
+                .HasOne(qa => qa.QuizQuestion)
+                .WithMany(q => q.Answers)
+                .HasForeignKey(qa => qa.QuizQuestionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Seed data for subjects, schedules, and exam schedules

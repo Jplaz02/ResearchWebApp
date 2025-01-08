@@ -11,87 +11,95 @@
 @inject GoogleCustomSearchService GoogleCustomSearchService
 @inject NavigationManager Navigation
 @inject DataContext _context
-@rendermode @(new InteractiveServerRenderMode(prerender:false))
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
-<div class="d-flex" style="min-height: 95vh;">
+<div class="d-flex" style="min-height: 100vh;">
     <!-- Sidebar -->
-    <div class="card flex-shrink-0" style="width: 15rem; height: 95vh; padding: 10px; position: fixed;">
-        <div class="card-header">
-            Subject Navigation
+    <div class="card shadow-sm border-0 flex-shrink-0" style="width: 18rem; height: 100vh;">
+        <div class="card-header bg-primary text-white text-center">
+            <h5 class="m-0">Subject Navigation</h5>
         </div>
         <ul class="list-group list-group-flush">
             <li class="list-group-item">
-                <NavLink class="nav-link" href="@($"/subject-details/{Id}")">
-                    Subject Details
+                <NavLink class="nav-link text-dark" href="@($"/subject-details/{Id}")" active-class="fw-bold">
+                    <i class="bi bi-info-circle me-2"></i>Subject Details
                 </NavLink>
             </li>
             <li class="list-group-item">
-                <NavLink class="nav-link" href="@($"/subject-files/{Id}")">
-                    |<u>Subject Files</u>
+                <NavLink class="nav-link text-dark" href="@($"/subject-files/{Id}")" active-class="fw-bold">
+                    <i class="bi bi-folder-fill me-2"></i>Subject Files
                 </NavLink>
             </li>
         </ul>
     </div>
 
     <!-- Main Content -->
-    <div class="content flex-grow-1" style="padding: 20px; margin-left: 15rem;">
+    <div class="content flex-grow-1 p-4">
         @if (subject != null)
         {
-            <h3>Subject Files</h3>
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="text-primary">Subject Files</h3>
+                <div>
+                    <h6 class="text-secondary mb-2">Upload PDF to Create Reviewer</h6>
+                    <InputFile OnChange="HandleFileSelected" accept=".pdf" class="form-control mb-2" />
+                    <button @onclick="ProcessPdf" class="btn btn-outline-primary btn-sm" disabled="@(uploadedPdfFile == null)">
+                        <i class="bi bi-upload me-1"></i>Process PDF
+                    </button>
+                </div>
+            </div>
             <hr />
-            <!-- Upload PDF Form -->
-            <h6>Upload PDF to make Reviewer</h6>
-            <InputFile OnChange="HandleFileSelected" accept=".pdf" />
-            <button @onclick="ProcessPdf" class="btn btn-secondary btn-sm ml-3" disabled="@(uploadedPdfFile == null)">Process PDF</button>
 
-            <p>Notification: </p>
-            @if (!string.IsNullOrEmpty(outputMessage))
-            {
-                <p>@outputMessage</p>
-            }
-
-            <hr />
+           
 
             <!-- Display Subject Files -->
-            <h5>Uploaded Files:</h5>
-            <div class="row">
+            <h5 class="text-secondary mt-4">Uploaded Files:</h5>
+            <div class="row g-4">
                 @foreach (var subjectFile in subject.SubjectFiles)
                 {
-                    <div class="col-md-4 mb-4">
-                        <div class="card" style="width: 18rem;">
+                    <div class="col-md-4">
+                        <div class="card shadow-sm border-0">
                             <div class="card-body">
-                                <h5 class="card-title">@subjectFile.FileName</h5>
-                                <h6 class="card-subtitle mb-2 text-muted">@subjectFile.DateUploaded.ToString("MM/dd/yyyy")</h6>
-
-                                <!-- View Button -->
-                                <Tooltip Title="View" Color="TooltipColor.Dark" Placement="TooltipPlacement.Bottom">
-                                    <button class="btn btn-info btn-sm ml-2" @onclick="() => ViewReviewer(subjectFile.FileName, subjectFile.SubjectId, subjectFile.Id)">
-                                        <i class="bi bi-eye"></i> <!-- Eye Icon for view -->
+                                <h5 class="card-title text-primary">@Path.GetFileNameWithoutExtension(subjectFile.FileName)</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Uploaded: @subjectFile.DateUploaded.ToString("MM/dd/yyyy")</h6>
+                                <div class="mt-3 d-flex justify-content-between">
+                                    <!-- View Button -->
+                                    <button class="btn btn-outline-info btn-sm" @onclick="() => ViewReviewer(subjectFile.FileName, subjectFile.SubjectId, subjectFile.Id)">
+                                        <i class="bi bi-eye me-1"></i>View
                                     </button>
-                                </Tooltip>
-
-                                <!-- Edit Button -->
-                                <Tooltip Title="Edit" Color="TooltipColor.Dark" Placement="TooltipPlacement.Bottom">
-                                    <button class="btn btn-warning btn-sm ml-2" @onclick="() => EditReviewer(subjectFile.FileName, subjectFile.Id)">
-                                        <i class="bi bi-pencil-square"></i> <!-- Edit Icon -->
+                                    <!-- Edit Button -->
+                                    <button class="btn btn-outline-warning btn-sm" @onclick="() => EditReviewer(subjectFile.FileName, subjectFile.Id)">
+                                        <i class="bi bi-pencil me-1"></i>Edit
                                     </button>
-                                </Tooltip>
-
-                                <!-- Delete Button -->
-                                <Tooltip Title="Delete" Color="TooltipColor.Dark" Placement="TooltipPlacement.Bottom">
-                                    <button class="btn btn-danger btn-sm ml-2" @onclick="() => DeleteSubjectFile(subjectFile)">
-                                        <i class="bi bi-trash3"></i> <!-- Trash Icon -->
+                                    <!-- Delete Button -->
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteSubjectFile(subjectFile)">
+                                        <i class="bi bi-trash me-1"></i>Delete
                                     </button>
-                                </Tooltip>
+                                    <!-- Generate Quiz Button -->
+                                    <button class="btn btn-outline-primary btn-sm" @onclick="() => NavigateToQuizGenerator(subjectFile.Id)">
+                                        <i class="bi bi-lightbulb me-1"></i>Generate Quiz
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 }
             </div>
+            <!-- Notification Section -->
+            @if (!string.IsNullOrEmpty(outputMessage))
+            {
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-info-circle-fill me-2"></i>@outputMessage
+                </div>
+            }
         }
         else
         {
-            <p>Loading subject files...</p>
+            <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="ms-3">Loading subject files...</p>
+            </div>
         }
     </div>
 </div>
@@ -180,9 +188,31 @@
 
                 foreach (var keyword in keywordList)
                 {
-                    var result = await GoogleCustomSearchService.SearchAsync(keyword, 2 );  // Ensure service is correctly referenced
+                    var result = await GoogleCustomSearchService.SearchAsync(keyword, 2);  // Ensure service is correctly referenced
                     searchResults.AddRange(result);
                 }
+
+                // Save the search results to the database
+                foreach (var result in searchResults)
+                {
+                    var literature = new RelatedLiterature
+                        {
+                            Keyword = result.Keyword,  // Assuming 'Keyword' is part of the result object
+                            Title = result.Title,
+                            Preview = result.Preview,
+                            Link = result.Link,
+                            SubjectFileId = subjectFile.Id // Save the foreign key
+                        };
+                    await _context.RelatedLiterature.AddAsync(literature);
+                }
+
+                // Save changes to the database
+                await _context.SaveChangesAsync();
+
+
+                outputMessage = $"PDF processed successfully. Structured study material saved as: {reviewerHtmlPath} and related literature saved to database.";
+            }
+        }
         catch (Exception ex)
         {
             outputMessage = $"An error occurred: {ex.Message}";
@@ -238,5 +268,10 @@
         {
             outputMessage = $"An error occurred: {ex.Message}";
         }
+    }
+
+    private void NavigateToQuizGenerator(int subjectFileId)
+    {
+        Navigation.NavigateTo($"/quiz-generator/{subjectFileId}");
     }
 }

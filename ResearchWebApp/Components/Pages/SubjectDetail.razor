@@ -2,61 +2,90 @@
 @inject SubjectStateService SubjectStateService
 @inject ISubjectService SubjectService
 @inject NavigationManager NavigationManager
-@rendermode @(new InteractiveServerRenderMode(prerender:false))
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <div class="d-flex">
     <!-- Sidebar -->
-    <div class="card" style="width: 15rem; height: 95vh; padding: 10px;">
-        <div class="card-header">
-            Subject Navigation
+    <div class="card shadow-sm border-0" style="width: 18rem; height: 100vh;">
+        <div class="card-header bg-primary text-white text-center">
+            <h5 class="m-0">Subject Navigation</h5>
         </div>
         <ul class="list-group list-group-flush">
             <li class="list-group-item">
-                <NavLink class="nav-link" href="@($"/subject-details/{Id}")">
-                    |<u>Subject Details</u>
+                <NavLink class="nav-link text-dark" href="@($"/subject-details/{Id}")" active-class="fw-bold">
+                    <i class="bi bi-info-circle-fill me-2"></i>Subject Details
                 </NavLink>
             </li>
             <li class="list-group-item">
-                <NavLink class="nav-link" href="@($"/subject-files/{Id}")">
-                    Subject Files
+                <NavLink class="nav-link text-dark" href="@($"/subject-files/{Id}")" active-class="fw-bold">
+                    <i class="bi bi-folder-fill me-2"></i>Subject Files
                 </NavLink>
             </li>
         </ul>
     </div>
 
     <!-- Main Content -->
-    <div class="content" style="flex-grow: 1; padding: 20px;">
+    <div class="content flex-grow-1 p-4">
         @if (CurrentSubject != null)
         {
-            <h3>@CurrentSubject.SubjectName
-            <button class="btn btn-secondary btn-sm ml-3" @onclick="ManageExam">Manage Exam</button>
-            </h3>
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="text-primary">@CurrentSubject.SubjectName</h3>
+                <button class="btn btn-outline-primary btn-sm" @onclick="ManageExam">
+                    <i class="bi bi-calendar-event me-1"></i>Manage Exam
+                </button>
+            </div>
             <hr />
             <p><strong>Description:</strong> @CurrentSubject.SubjectDescription</p>
             <p><strong>Teacher:</strong> @CurrentSubject.Teacher</p>
 
-            <h4>Schedules:</h4>
-            <ul>
-                @foreach (var schedule in CurrentSubject.Schedules)
+            <div class="mt-4">
+                <h4 class="text-secondary">Schedules:</h4>
+                @if (CurrentSubject.Schedules.Any())
                 {
-                    <li>@schedule.Day: @DisplayTime(schedule.StartTime) - @DisplayTime(schedule.EndTime)</li>
+                    <ul class="list-unstyled">
+                        @foreach (var schedule in CurrentSubject.Schedules)
+                        {
+                            <li>
+                                <i class="bi bi-clock me-2"></i>
+                                <strong>@schedule.Day:</strong> @DisplayTime(schedule.StartTime) - @DisplayTime(schedule.EndTime)
+                            </li>
+                        }
+                    </ul>
                 }
-            </ul>
-
-            <h4>Upcoming Exams:</h4>
-            <ul>
-                @foreach (var exam in CurrentSubject.ExamSchedules)
+                else
                 {
-                    <li>@exam.ExamDate.ToShortDateString() @DisplayTime(exam.StartTime) - @DisplayTime(exam.EndTime)</li>
+                    <p class="text-muted">No schedules found.</p>
                 }
-            </ul>
+            </div>
 
-            <!-- Manage Exam Button -->
-            
+            <div class="mt-4">
+                <h4 class="text-secondary">Upcoming Exams:</h4>
+                @if (CurrentSubject.ExamSchedules.Any())
+                {
+                    <ul class="list-unstyled">
+                        @foreach (var exam in CurrentSubject.ExamSchedules)
+                        {
+                            <li>
+                                <i class="bi bi-calendar3 me-2"></i>
+                                @exam.ExamDate.ToShortDateString() - @DisplayTime(exam.StartTime) to @DisplayTime(exam.EndTime)
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-muted">No upcoming exams.</p>
+                }
+            </div>
         }
         else
         {
-            <p>Loading subject details...</p>
+            <div class="d-flex justify-content-center align-items-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="ms-3">Loading subject details...</p>
+            </div>
         }
     </div>
 </div>

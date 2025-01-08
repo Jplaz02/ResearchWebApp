@@ -1,7 +1,10 @@
-﻿using System.Net.Http;
+﻿using ResearchWebApp.Models;
+using System.Text.Json;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Text.Json;
+
 
 public class OpenAIService
 {
@@ -11,14 +14,14 @@ public class OpenAIService
     public OpenAIService(HttpClient httpClient)
     {
         _httpClient = httpClient;
-        _apiKey = "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"; // Replace with your API Key
+        _apiKey = "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"; // Replace with your API Key
     }
 
     public async Task<string> GenerateText(string prompt)
     {
         var request = new
         {
-            model = "gpt-4o",  // Use the new model
+            model = "gpt-4o",  // You can use a newer version if necessary
             messages = new[] { new { role = "user", content = prompt } },
             max_tokens = 16384,
             temperature = 1.0
@@ -32,19 +35,44 @@ public class OpenAIService
         {
             var response = await _httpClient.SendAsync(requestMessage);
 
-            // Log the response status code and headers
+            // Log the response status code and headers for debugging
             Console.WriteLine($"Response Status Code: {response.StatusCode}");
             Console.WriteLine($"Response Headers: {response.Headers}");
 
             if (response.IsSuccessStatusCode)
             {
                 var jsonResponse = await response.Content.ReadAsStringAsync();
-                var result = JsonDocument.Parse(jsonResponse);
-                return result.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
+                Console.WriteLine($"Full API Response: {jsonResponse}"); // Log the full response for debugging
+
+                try
+                {
+                    var result = JsonDocument.Parse(jsonResponse);
+                    var choicesElement = result.RootElement.GetProperty("choices");
+
+                    if (choicesElement.GetArrayLength() > 0)
+                    {
+                        var message = choicesElement[0]
+                            .GetProperty("message")
+                            .GetProperty("content")
+                            .GetString();
+
+                        return message;
+                    }
+                    else
+                    {
+                        return "No valid choices found in the response.";
+                    }
+                }
+                catch (JsonException jsonEx)
+                {
+                    // Handle any JSON parsing errors
+                    Console.WriteLine($"Error parsing JSON: {jsonEx.Message}");
+                    return $"Error parsing JSON response: {jsonEx.Message}";
+                }
             }
             else
             {
-                // Read and log the error content for debugging
+                // Handle non-success responses
                 var errorResponse = await response.Content.ReadAsStringAsync();
                 Console.WriteLine($"Error Response: {errorResponse}");
                 return $"Error: {response.StatusCode}, {errorResponse}";
@@ -52,9 +80,11 @@ public class OpenAIService
         }
         catch (Exception ex)
         {
-            // Log the exception for debugging
+            // Log any other exceptions
             Console.WriteLine($"Exception: {ex.Message}");
             return "Error: Unable to generate text due to an exception.";
         }
     }
+
+
 }

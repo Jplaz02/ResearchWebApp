@@ -14,6 +14,12 @@ namespace ResearchWebApp.Services
             _context = context;
         }
 
+        public async Task<SubjectFile> GetSubjectFileByIdAsync(int id)
+        {
+            return await _context.SubjectFiles.FindAsync(id);
+        }
+
+
         public async Task AddSubjectFileAsync(SubjectFile subjectFile)
         {
             // Add the new SubjectFile to the database

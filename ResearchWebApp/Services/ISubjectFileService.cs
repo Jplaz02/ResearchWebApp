@@ -6,6 +6,8 @@ namespace ResearchWebApp.Services
     {
         Task AddSubjectFileAsync(SubjectFile subjectFile);
         Task<IEnumerable<SubjectFile>> GetFilesBySubjectIdAsync(int subjectId);
+        Task<SubjectFile> GetSubjectFileByIdAsync(int id);
+
         Task DeleteSubjectFileAsync(int Id);
     }
 }

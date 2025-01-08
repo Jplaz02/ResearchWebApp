@@ -1,0 +1,115 @@
+﻿@page "/quiz-detail/{QuizId:int}/{SubjectFileId:int}"
+@using ResearchWebApp.Services
+@inject DataContext _context
+@inject NavigationManager Navigation
+@using Microsoft.EntityFrameworkCore
+@rendermode @(new InteractiveServerRenderMode(prerender:false))
+
+<div class="container my-5">
+    <h1 class="text-center">Quiz Details</h1>
+    <hr />
+
+    @if (quiz != null && quizAttempts != null)
+    {
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <h3 class="card-title text-primary">@quiz.Title</h3>
+                <p><strong>Question Type:</strong> @quiz.Questions.FirstOrDefault()?.QuestionType</p>
+                <p><strong>Total Questions:</strong> @quiz.TotalQuestions</p>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <button class="btn btn-primary" @onclick="RetakeQuiz">Retake Quiz</button>
+                <button class="btn btn-secondary" @onclick="GoBackToGenerateQuiz">Go Back</button>
+            </div>
+        </div>
+
+        <h3 class="mb-4">Attempts</h3>
+        @if (quizAttempts.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Date Attempted</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var attempt in quizAttempts)
+                        {
+                            <tr>
+                                <td>@attempt.Id</td>
+                                <td>@attempt.DateAttempted.ToString("g")</td>
+                                <td>@attempt.Score / @quiz.TotalQuestions</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">No attempts have been made for this quiz yet.</p>
+        }
+
+        <h3 class="mt-5">Questions and Correct Answers</h3>
+        <div class="accordion" id="questionsAccordion">
+            @foreach (var question in quiz.Questions)
+            {
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-@question.Id">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@question.Id" aria-expanded="false" aria-controls="collapse-@question.Id">
+                            Question: @question.QuestionText
+                        </button>
+                    </h2>
+                    <div id="collapse-@question.Id" class="accordion-collapse collapse" aria-labelledby="heading-@question.Id" data-bs-parent="#questionsAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Correct Answer:</strong> @question.CorrectAnswer</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center mt-5">
+            <p class="text-muted">Loading quiz details...</p>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int QuizId { get; set; }
+    [Parameter] public int SubjectFileId { get; set; }
+    private Quiz quiz;
+    private List<QuizAttempt> quizAttempts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load Quiz and Attempts
+        quiz = await _context.Quizzes
+            .Include(q => q.Questions)
+            .FirstOrDefaultAsync(q => q.Id == QuizId);
+
+        if (quiz != null)
+        {
+            quizAttempts = await _context.QuizAttempts
+                .Where(a => a.QuizId == QuizId)
+                .ToListAsync();
+        }
+    }
+
+    private void RetakeQuiz()
+    {
+        // Navigate to the Take Quiz page
+        Navigation.NavigateTo($"/take-quiz/{QuizId}/{SubjectFileId}");
+    }
+
+    private void GoBackToGenerateQuiz()
+    {
+        // Navigate back to the Quiz Generator page
+        Navigation.NavigateTo($"/quiz-generator/{SubjectFileId}");
+    }
+}

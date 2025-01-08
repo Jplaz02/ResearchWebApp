@@ -38,7 +38,7 @@ builder.Services.Configure<FormOptions>(options =>
 });
 
 // Register Syncfusion license key
-SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1NDaF5cWWtCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdnWH9fdHVVRWNZVkdzXUE=");
+SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1NMaF5cXmBCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdmWX5ed3RXQmlZVkF2XUs=");
 
 builder.Services.AddSyncfusionBlazor();
 builder.Services.AddSingleton<ISyncfusionStringLocalizer, CustomSyncfusionStringLocalizer>();
@@ -57,6 +57,13 @@ builder.Services.AddScoped<ISubjectService, SubjectService>();
 builder.Services.AddScoped<IExamScheduleService, ExamScheduleService>();
 builder.Services.AddScoped<IStudySessionService, StudySessionService>();
 builder.Services.AddScoped<ISubjectFileService, SubjectFileService>();
+builder.Services.AddScoped<IQuizService, QuizService>();
+builder.Services.AddScoped<IQuizQuestionService, QuizQuestionService>();
+builder.Services.AddScoped<IQuizAttemptService, QuizAttemptService>();
+builder.Services.AddScoped<IQuizAnswerService, QuizAnswerService>();
+
+string reviewerFolderPath = Path.Combine(builder.Environment.ContentRootPath, "Reviewer");
+
 
 
 
