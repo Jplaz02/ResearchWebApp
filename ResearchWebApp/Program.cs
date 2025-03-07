@@ -38,7 +38,7 @@ builder.Services.Configure<FormOptions>(options =>
 });
 
 // Register Syncfusion license key
-SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1NMaF5cXmBCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdmWX5ed3RXQmlZVkF2XUs=");
+SyncfusionLicenseProvider.RegisterLicense();
 
 builder.Services.AddSyncfusionBlazor();
 builder.Services.AddSingleton<ISyncfusionStringLocalizer, CustomSyncfusionStringLocalizer>();
