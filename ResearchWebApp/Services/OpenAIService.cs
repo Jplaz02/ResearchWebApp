@@ -14,7 +14,7 @@ public class OpenAIService
     public OpenAIService(HttpClient httpClient)
     {
         _httpClient = httpClient;
-        _apiKey = "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"; // Replace with your API Key
+        _apiKey = ""; // Replace with your API Key
     }
 
     public async Task<string> GenerateText(string prompt)
