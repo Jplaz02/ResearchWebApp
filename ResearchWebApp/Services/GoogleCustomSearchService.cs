@@ -3,8 +3,8 @@
     public class GoogleCustomSearchService
     {
         private readonly HttpClient _httpClient;
-        private const string ApiKey = "AIzaSyAnR1UVWwBrPGUBnB63GyaLEne_zW4ECVY";
-        private const string SearchEngineId = "c6e1734fb6eaf4ee8";
+        private const string ApiKey = "";
+        private const string SearchEngineId = "";
 
         public GoogleCustomSearchService(HttpClient httpClient)
         {
