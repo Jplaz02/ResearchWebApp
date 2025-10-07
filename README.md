@@ -55,6 +55,12 @@ It combines **smart study scheduling**, **OCR-based content extraction**, and **
   * Matching Type
 * Provides quick, topic-based assessments directly from uploaded materials.
 
+### 🔍 5. Related Literature Suggestions (Google API)
+
+* Uses the Google Custom Search API to find related academic articles, papers, and web resources.
+* Suggests materials relevant to the extracted reviewer topics.
+* Encourages deeper understanding and additional exploration of the subject matter.
+
 ---
 
 ### 🔍 5. Related Literature Suggestions
@@ -100,6 +106,7 @@ It combines **smart study scheduling**, **OCR-based content extraction**, and **
 | NLP                 | OpenAI GPT-based Models  |
 | Reviewer Generation | OpenAI                   |
 | Quiz Generation     | OpenAI                   |
+| Related Literature  | Google Custom Search API |
 
 ---
 
